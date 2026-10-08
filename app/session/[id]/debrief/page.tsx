@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { PitchRadar } from "@/components/features/radar/PitchRadar";
 import { ShareCardButton } from "@/components/features/share-card/ShareCardButton";
+import { BehindDoorsScene } from "@/components/features/behind-doors/BehindDoorsScene";
 
 interface VerdictItem {
   investor_id: string;
@@ -596,6 +597,9 @@ export default function DebriefReportPage() {
               </section>
             )}
           </div>
+
+          {/* Behind Closed Doors: Partner Deliberation Scene (Feature Flagged) */}
+          <BehindDoorsScene sessionId={sessionId} className="no-print" />
 
           {/* Section 8: Tightened 30-Second Elevator Pitch */}
           {report.tightened_pitch && (

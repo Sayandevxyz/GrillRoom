@@ -12,6 +12,7 @@ interface MockDB {
   convictions: Record<string, unknown>[];
   verdicts: Record<string, unknown>[];
   reports: Map<string, Record<string, unknown>>;
+  behind_doors: Map<string, Record<string, unknown>>;
   knowledge_chunks: Record<string, unknown>[];
   rate_limits: Map<string, Record<string, unknown>>;
 }
@@ -25,6 +26,7 @@ const mockDb: MockDB = {
   convictions: [],
   verdicts: [],
   reports: new Map(),
+  behind_doors: new Map(),
   knowledge_chunks: [],
   rate_limits: new Map(),
 };

@@ -21,3 +21,8 @@ export const FEATURE_SHARE_CARD =
   typeof process !== "undefined" &&
   process.env.NEXT_PUBLIC_FEATURE_SHARE_CARD === "true";
 
+export const FEATURE_BEHIND_DOORS =
+  typeof process !== "undefined" &&
+  process.env.NEXT_PUBLIC_FEATURE_BEHIND_DOORS === "true";
+
+
