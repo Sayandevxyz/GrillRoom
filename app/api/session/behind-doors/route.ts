@@ -5,7 +5,7 @@ import { getSession, getTurns } from "@/lib/engine/session";
 import { getSessionClaims, toClaimSnippets } from "@/lib/engine/ledger";
 import { createChatCompletion, DEFAULT_BIG_MODEL } from "@/lib/llm/groq";
 import { parseLlmJson } from "@/lib/llm/json";
-import { checkRateLimit } from "@/lib/security";
+import { checkRateLimit, logServerError } from "@/lib/security";
 import { FEATURE_BEHIND_DOORS } from "@/lib/features/flags";
 
 const BehindDoorsSchema = z.object({
@@ -234,8 +234,10 @@ Write a 6 to 8 turn confidential partner deliberation dialogue now. Return stric
 
     return NextResponse.json(sceneContent);
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to generate behind closed doors scene";
-    console.error("[Behind Closed Doors Error]", message);
-    return NextResponse.json({ error: message }, { status: 500 });
+    const errorId = logServerError(err, "Behind Closed Doors Error");
+    return NextResponse.json(
+      { error: "Failed to generate deliberation scene. Please try again.", errorId },
+      { status: 500 }
+    );
   }
 }

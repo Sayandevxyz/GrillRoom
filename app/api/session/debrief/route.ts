@@ -6,7 +6,7 @@ import { getSessionClaims, toClaimSnippets } from "@/lib/engine/ledger";
 import { createChatCompletion, DEFAULT_BIG_MODEL } from "@/lib/llm/groq";
 import { parseLlmJson } from "@/lib/llm/json";
 import { buildDebriefPrompt } from "@/lib/llm/prompts";
-import { checkRateLimit } from "@/lib/security";
+import { checkRateLimit, logServerError } from "@/lib/security";
 
 const DebriefSchema = z.object({
   sessionId: z.string().uuid(),
@@ -219,8 +219,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(reportContent);
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to generate debrief";
-    console.error("[Debrief Route Error]", err);
-    return NextResponse.json({ error: message }, { status: 500 });
+    const errorId = logServerError(err, "Debrief Route Error");
+    return NextResponse.json(
+      { error: "Failed to generate investor debrief report. Please try again.", errorId },
+      { status: 500 }
+    );
   }
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionRadar } from "@/lib/features/radar/getSessionRadar";
+import { logServerError } from "@/lib/security";
 
 export async function GET(req: NextRequest) {
   try {
@@ -11,8 +12,7 @@ export async function GET(req: NextRequest) {
     const radar = await getSessionRadar(sessionId);
     return NextResponse.json({ radar });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to load radar scores";
-    console.warn("[Radar Route Error]", message);
-    return NextResponse.json({ radar: null, error: message }, { status: 500 });
+    const errorId = logServerError(err, "Radar Route Error");
+    return NextResponse.json({ radar: null, error: "Failed to load pitch radar metrics.", errorId }, { status: 500 });
   }
 }

@@ -5,7 +5,7 @@ import { query, mockDb, isNeonConfigured } from "@/lib/db";
 import { selectPanel, INVESTOR_PERSONAS, CHAIR_INFO } from "@/lib/engine/personas";
 import { addClaim, getSessionClaims } from "@/lib/engine/ledger";
 import { recordTurn, recordConviction } from "@/lib/engine/session";
-import { checkRateLimit } from "@/lib/security";
+import { checkRateLimit, logServerError } from "@/lib/security";
 import { evaluateAnswer } from "@/lib/engine/analyst";
 
 const StartSessionSchema = z.object({
@@ -149,9 +149,11 @@ export async function POST(req: NextRequest) {
 
     return response;
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to start session";
-    console.error("[Session Start Error]", err);
-    return NextResponse.json({ error: message }, { status: 500 });
+    const errorId = logServerError(err, "Session Start Error");
+    return NextResponse.json(
+      { error: "Failed to initialize investment panel session. Please try again.", errorId },
+      { status: 500 }
+    );
   }
 }
 
