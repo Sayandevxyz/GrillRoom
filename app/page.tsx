@@ -1,26 +1,94 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { Header } from "@/components/Header";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Chip } from "@/components/ui/Chip";
+import { Alert } from "@/components/ui/Alert";
 import { IntensityMode } from "@/lib/types";
+import {
+  FileUp,
+  FileCheck,
+  Trash2,
+  Users,
+  FileText,
+  CheckCircle2,
+  Award,
+  Check,
+} from "lucide-react";
 
-export default function LandingPage() {
+export default function SetupPage() {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [idea, setIdea] = useState("");
-  const [industry, setIndustry] = useState("Technology / AI");
+  const [industry, setIndustry] = useState("Technology / B2B SaaS");
   const [stage, setStage] = useState("Seed");
   const [ask, setAsk] = useState("$750,000 for 10%");
   const [intensity, setIntensity] = useState<IntensityMode>("tough");
+
+  const [uploadedFile, setUploadedFile] = useState<{ name: string; size: string } | null>(null);
   const [pdfText, setPdfText] = useState("");
+  const [isUploadingPdf, setIsUploadingPdf] = useState(false);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  const handleStartSession = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (idea.trim().length < 50) {
-      setErrorMsg("Your pitch must be at least 50 characters to face the panel.");
+  const isPitchValid = idea.trim().length >= 50 && idea.length <= 6000;
+
+  const handlePdfUpload = async (file: File) => {
+    if (file.size > 10 * 1024 * 1024) {
+      setErrorMsg("PDF file exceeds the 10 MB limit.");
       return;
     }
+
+    setIsUploadingPdf(true);
+    setErrorMsg("");
+
+    const fd = new FormData();
+    fd.append("file", file);
+
+    try {
+      const res = await fetch("/api/extract-pdf", { method: "POST", body: fd });
+      const data = (await res.json()) as { text?: string; error?: string };
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to parse pitch deck PDF.");
+      }
+
+      if (data.text) {
+        setPdfText(data.text);
+        setUploadedFile({
+          name: file.name,
+          size: `${(file.size / 1024 / 1024).toFixed(1)} MB`,
+        });
+
+        // Pre-fill pitch if textarea is currently empty
+        if (!idea.trim()) {
+          setIdea(
+            `[Extracted from ${file.name}]:\n${data.text.slice(0, 400).trim()}...`
+          );
+        }
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to parse PDF deck.";
+      setErrorMsg(msg);
+    } finally {
+      setIsUploadingPdf(false);
+    }
+  };
+
+  const handleRemovePdf = () => {
+    setUploadedFile(null);
+    setPdfText("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleStartReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isPitchValid) return;
 
     setIsSubmitting(true);
     setErrorMsg("");
@@ -41,248 +109,368 @@ export default function LandingPage() {
 
       const data = (await res.json()) as { sessionId?: string; error?: string };
       if (!res.ok) {
-        throw new Error(data.error || "Failed to enter GrillRoom");
+        throw new Error(data.error || "Failed to start investor review.");
       }
 
       if (data.sessionId) {
         router.push(`/session/${data.sessionId}`);
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Something went wrong entering the boardroom.";
-      setErrorMsg(message);
+      const msg = err instanceof Error ? err.message : "Unable to convene the panel. Please retry.";
+      setErrorMsg(msg);
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-background text-slate-100 flex flex-col justify-between selection:bg-shark-orange selection:text-white">
-      {/* Top Navigation */}
-      <header className="border-b border-surface-border/60 bg-surface/50 backdrop-blur-md px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 rounded bg-shark-orange flex items-center justify-center font-bold text-white shadow-lg shadow-shark-orange/30">
-            🔥
-          </div>
-          <span className="font-bold text-lg tracking-tight text-white">GRILLROOM</span>
-        </div>
-        <div className="flex items-center space-x-2 text-xs text-slate-400">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span>Panel Active & Assembled</span>
-        </div>
-      </header>
+    <div className="min-h-screen flex flex-col justify-between">
+      {/* Top Authority Header */}
+      <Header />
 
-      {/* Main Pitch Form Container */}
-      <main id="main-content" className="max-w-4xl mx-auto w-full px-6 py-10 flex-1">
-        <div className="space-y-4 text-center mb-8">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-surface-elevated border border-shark-orange/40 text-xs font-semibold text-shark-orange tracking-wider uppercase">
-            <span>High-Stakes Interrogation Engine</span>
+      <main id="main-content" className="flex-1 max-w-setup mx-auto w-full px-6 py-10 md:py-14">
+        {/* Hero Section */}
+        <div className="text-center max-w-2xl mx-auto space-y-3 mb-10 md:mb-12">
+          <div>
+            <span className="inline-block px-3 py-1 text-[11px] font-bold tracking-wider uppercase text-gold-dark bg-amber-50/70 border border-amber-200/80 rounded-full">
+              AI Investor Readiness Simulator
+            </span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-white leading-tight">
-            Pitch the AI Boardroom.
+          <h1 className="text-3xl md:text-5xl font-serif font-bold text-navy tracking-tight leading-[1.15]">
+            Get Your Startup Pitch Investor-Ready.
           </h1>
-          <p className="text-slate-400 max-w-2xl mx-auto text-base md:text-lg">
-            Five autonomous AI investor archetypes. A hidden Claim Ledger tracking every number,
-            contradiction, and dodge. Will you close the round or be torn apart?
+          <p className="text-text-2 text-sm md:text-base leading-relaxed">
+            Face an AI investor panel that challenges your numbers, flags weak claims, and prepares you for real fundraising conversations.
           </p>
         </div>
 
-        <form
-          onSubmit={handleStartSession}
-          className="bg-surface-card border border-surface-border rounded-xl p-6 md:p-8 space-y-6 shadow-2xl glow-subtle"
-        >
-          {errorMsg && (
-            <div role="alert" className="p-4 rounded-lg bg-red-950/50 border border-red-500/50 text-red-200 text-sm">
-              {errorMsg}
-            </div>
-          )}
+        {/* Two-Column Setup Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Left Column: Form Card (7 cols) */}
+          <div className="lg:col-span-7">
+            <Card className="p-6 md:p-8">
+              <form onSubmit={handleStartReview} className="space-y-8">
+                {errorMsg && (
+                  <Alert
+                    variant="danger"
+                    title="Review Initiation Error"
+                    message={errorMsg}
+                    onRetry={() => setErrorMsg("")}
+                  />
+                )}
 
-          {/* Pitch Textarea */}
-          <div className="space-y-2">
-            <div className="flex justify-between items-center text-sm font-medium">
-              <label htmlFor="pitch-input" className="text-slate-200">
-                Your Startup Pitch <span className="text-shark-orange">*</span>
-              </label>
-              <span className={`text-xs ${idea.length < 50 ? "text-amber-400" : "text-slate-400"}`}>
-                {idea.length} / 6,000 chars (min 50)
-              </span>
-            </div>
-            <textarea
-              id="pitch-input"
-              rows={6}
-              value={idea}
-              onChange={(e) => setIdea(e.target.value)}
-              placeholder="Describe your startup: What urgent problem do you solve? Who is the customer? What is your pricing and traction? (e.g. We built an automated AI compliance copilot for fintech lenders. We charge $3,000/mo and have 8 signed pilot customers with a $400 CAC...)"
-              className="w-full bg-background border border-surface-border focus:border-shark-orange rounded-lg p-4 text-slate-100 placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-shark-orange transition-all font-sans text-sm md:text-base resize-y"
-              required
-            />
-          </div>
-
-          {/* PDF Drop-zone */}
-          <div className="space-y-2">
-            <label htmlFor="pdf-upload" className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center justify-between">
-              <span>Optional Pitch Deck (.pdf, max 10MB)</span>
-              {pdfText && <span className="text-emerald-400 font-normal">Deck extracted ({pdfText.length} chars)</span>}
-            </label>
-            <div className="border border-dashed border-surface-border hover:border-shark-orange/80 rounded-lg p-4 bg-background/50 text-center transition-all">
-              <input
-                type="file"
-                id="pdf-upload"
-                accept=".pdf"
-                onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  const fd = new FormData();
-                  fd.append("file", file);
-                  try {
-                    setErrorMsg("");
-                    const res = await fetch("/api/extract-pdf", { method: "POST", body: fd });
-                    const d = (await res.json()) as { text?: string; error?: string };
-                    if (!res.ok) throw new Error(d.error || "Failed to parse PDF");
-                    if (d.text) {
-                      setPdfText(d.text);
-                      if (!idea.trim()) {
-                        setIdea(`[Extracted from ${file.name}]:\n${d.text.slice(0, 500)}...`);
-                      }
-                    }
-                  } catch (err: unknown) {
-                    const message = err instanceof Error ? err.message : "Failed to upload PDF";
-                    setErrorMsg(message);
-                  }
-                }}
-                className="hidden"
-              />
-              <label htmlFor="pdf-upload" className="cursor-pointer flex flex-col items-center space-y-1.5">
-                <span className="text-2xl" aria-hidden="true">📄</span>
-                <span className="text-xs font-medium text-slate-300">
-                  {pdfText ? "Replace uploaded deck PDF" : "Drop your deck PDF here, or browse files"}
-                </span>
-                <span className="text-[10px] text-slate-500">Supports .pdf up to 10 MB</span>
-              </label>
-            </div>
-          </div>
-
-          {/* Core Metadata Row */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-1.5">
-              <label htmlFor="industry-select" className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                Industry
-              </label>
-              <select
-                id="industry-select"
-                value={industry}
-                onChange={(e) => setIndustry(e.target.value)}
-                className="w-full bg-surface-elevated border border-surface-border rounded-lg p-2.5 text-sm text-slate-200 focus:outline-none focus:border-shark-orange"
-              >
-                <option value="Technology / AI">Technology / AI</option>
-                <option value="Enterprise SaaS">Enterprise SaaS</option>
-                <option value="Fintech">Fintech</option>
-                <option value="Healthcare & Bio">Healthcare & Bio</option>
-                <option value="Consumer / Social">Consumer / Social</option>
-                <option value="Climate / DeepTech">Climate / DeepTech</option>
-              </select>
-            </div>
-
-            <div className="space-y-1.5">
-              <label htmlFor="stage-select" className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                Current Stage
-              </label>
-              <select
-                id="stage-select"
-                value={stage}
-                onChange={(e) => setStage(e.target.value)}
-                className="w-full bg-surface-elevated border border-surface-border rounded-lg p-2.5 text-sm text-slate-200 focus:outline-none focus:border-shark-orange"
-              >
-                <option value="Pre-seed / Idea">Pre-seed / Idea</option>
-                <option value="Seed (Pilots live)">Seed (Pilots live)</option>
-                <option value="Late Seed / Pre-Series A">Late Seed / Pre-Series A</option>
-              </select>
-            </div>
-
-            <div className="space-y-1.5">
-              <label htmlFor="ask-input" className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                Stated Ask & Terms
-              </label>
-              <input
-                id="ask-input"
-                type="text"
-                value={ask}
-                onChange={(e) => setAsk(e.target.value)}
-                placeholder="$500,000 for 10%"
-                className="w-full bg-surface-elevated border border-surface-border rounded-lg p-2.5 text-sm text-slate-200 focus:outline-none focus:border-shark-orange"
-              />
-            </div>
-          </div>
-
-          {/* Intensity Selector */}
-          <fieldset className="space-y-2 border-0 p-0 m-0">
-            <legend className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Interrogation Intensity
-            </legend>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {[
-                {
-                  id: "friendly" as IntensityMode,
-                  title: "Friendly Angel",
-                  desc: "Constructive feedback, patient laddering, supportive tone.",
-                },
-                {
-                  id: "tough" as IntensityMode,
-                  title: "Tough Institutional VC",
-                  desc: "Rigorous unit economics, quick dodge callouts, realistic stress.",
-                },
-                {
-                  id: "shark" as IntensityMode,
-                  title: "The GrillRoom",
-                  desc: "All 5 investors sit. Aggressive interrupts, brutal contradiction attacks.",
-                },
-              ].map((lvl) => (
-                <label
-                  key={lvl.id}
-                  htmlFor={`intensity-${lvl.id}`}
-                  className={`p-3.5 rounded-lg border cursor-pointer transition-all block ${
-                    intensity === lvl.id
-                      ? "bg-shark-orange/10 border-shark-orange text-white glow-orange-sm"
-                      : "bg-surface-elevated border-surface-border/80 text-slate-400 hover:border-slate-500"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-semibold text-sm text-slate-200">{lvl.title}</span>
-                    <input
-                      id={`intensity-${lvl.id}`}
-                      type="radio"
-                      name="intensity"
-                      value={lvl.id}
-                      checked={intensity === lvl.id}
-                      onChange={() => setIntensity(lvl.id)}
-                      className="accent-shark-orange focus-visible:ring-2 focus-visible:ring-shark-orange"
-                    />
+                {/* Section 1: Pitch Brief */}
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-[0.08em] text-gold-dark">
+                      1 Your Pitch
+                    </span>
+                    <span
+                      className={`text-xs tabular-nums font-medium ${
+                        idea.length > 6000
+                          ? "text-danger font-bold"
+                          : idea.length > 0 && idea.length < 50
+                          ? "text-warning"
+                          : "text-text-2"
+                      }`}
+                    >
+                      {idea.length} / 6,000 (minimum 50)
+                    </span>
                   </div>
-                  <p className="text-xs text-slate-400 leading-relaxed">{lvl.desc}</p>
-                </label>
-              ))}
-            </div>
-          </fieldset>
 
-          {/* Action Button */}
-          <div className="pt-2">
-            <button
-              id="submit-pitch-btn"
-              type="submit"
-              disabled={isSubmitting || idea.trim().length < 50}
-              className={`w-full py-4 px-6 rounded-lg font-bold text-base uppercase tracking-wider text-white shadow-xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${
-                isSubmitting || idea.trim().length < 50
-                  ? "bg-slate-700 opacity-60 cursor-not-allowed"
-                  : "bg-gradient-to-r from-shark-orange to-amber-600 hover:from-orange-600 hover:to-amber-500 shadow-orange-950/50 glow-orange hover:scale-[1.01]"
-              }`}
-            >
-              {isSubmitting ? "Assembling the Boardroom..." : "Face The Panel"}
-            </button>
+                  <textarea
+                    id="pitch-input"
+                    rows={6}
+                    value={idea}
+                    onChange={(e) => setIdea(e.target.value)}
+                    placeholder="Describe your startup: What urgent problem do you solve? Who is the customer? What is your pricing and traction? (e.g. We built an automated compliance engine for fintech lenders. We charge $3,000/mo and have 8 signed pilot customers with a $400 CAC...)"
+                    className="w-full bg-white border border-border focus:border-navy rounded-field p-3.5 text-text placeholder:text-slate-400 focus:outline-none transition-subtle text-sm leading-relaxed resize-y"
+                    required
+                  />
+                  <p className="text-xs text-text-2">
+                    Include your customer profile, metrics, pricing, and observed traction for the sharpest review.
+                  </p>
+                </div>
+
+                {/* Section 2: Deck Drop-zone */}
+                <div className="space-y-2.5">
+                  <span className="text-xs font-bold uppercase tracking-[0.08em] text-gold-dark">
+                    2 Deck (Optional)
+                  </span>
+
+                  {!uploadedFile ? (
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="border border-dashed border-border hover:border-slate-400 bg-surface-2/60 hover:bg-surface-2 rounded-field p-6 text-center cursor-pointer transition-subtle focus-within:ring-2 focus-within:ring-info"
+                    >
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        id="pdf-upload"
+                        accept=".pdf"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handlePdfUpload(file);
+                        }}
+                        className="sr-only"
+                      />
+                      <FileUp className="w-6 h-6 text-text-2 mx-auto mb-2" aria-hidden="true" />
+                      <p className="text-xs font-semibold text-text">
+                        {isUploadingPdf
+                          ? "Extracting slides and claims..."
+                          : "Drop a PDF deck here or browse"}
+                      </p>
+                      <p className="text-[11px] text-text-2 mt-0.5">PDF format, up to 10 MB</p>
+                    </div>
+                  ) : (
+                    <div className="p-3.5 rounded-field bg-slate-50 border border-border flex items-center justify-between">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <FileCheck className="w-5 h-5 text-success flex-shrink-0" aria-hidden="true" />
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-text truncate">{uploadedFile.name}</p>
+                          <p className="text-[11px] text-text-2">{uploadedFile.size} • Slides extracted</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleRemovePdf}
+                        className="p-1 text-text-2 hover:text-danger rounded transition-subtle"
+                        title="Remove deck"
+                        aria-label="Remove uploaded deck"
+                      >
+                        <Trash2 className="w-4 h-4" aria-hidden="true" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Section 3: Deal Context */}
+                <div className="space-y-3">
+                  <span className="text-xs font-bold uppercase tracking-[0.08em] text-gold-dark">
+                    3 Deal Context
+                  </span>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label htmlFor="industry-select" className="block text-[11px] font-bold text-text-2 uppercase mb-1">
+                        Industry
+                      </label>
+                      <select
+                        id="industry-select"
+                        value={industry}
+                        onChange={(e) => setIndustry(e.target.value)}
+                        className="w-full bg-white border border-border rounded-field px-3 py-2 text-xs text-text font-medium focus:border-navy focus:outline-none"
+                      >
+                        <option>Technology / B2B SaaS</option>
+                        <option>Fintech / Insurtech</option>
+                        <option>HealthTech / Biotech</option>
+                        <option>Consumer / Marketplace</option>
+                        <option>Climate / DeepTech</option>
+                        <option>Hardware / Robotics</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label htmlFor="stage-select" className="block text-[11px] font-bold text-text-2 uppercase mb-1">
+                        Current Stage
+                      </label>
+                      <select
+                        id="stage-select"
+                        value={stage}
+                        onChange={(e) => setStage(e.target.value)}
+                        className="w-full bg-white border border-border rounded-field px-3 py-2 text-xs text-text font-medium focus:border-navy focus:outline-none"
+                      >
+                        <option>Pre-seed / Idea</option>
+                        <option>Seed / Live Product</option>
+                        <option>Series A</option>
+                        <option>Bridge Round</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label htmlFor="ask-input" className="block text-[11px] font-bold text-text-2 uppercase mb-1">
+                        Stated Ask
+                      </label>
+                      <input
+                        type="text"
+                        id="ask-input"
+                        value={ask}
+                        onChange={(e) => setAsk(e.target.value)}
+                        placeholder="$750,000 for 10%"
+                        className="w-full bg-white border border-border rounded-field px-3 py-2 text-xs text-text font-medium focus:border-navy focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 4: Review Intensity */}
+                <div className="space-y-3">
+                  <span className="text-xs font-bold uppercase tracking-[0.08em] text-gold-dark">
+                    4 Review Intensity
+                  </span>
+
+                  <div className="space-y-2.5">
+                    {[
+                      {
+                        id: "friendly" as IntensityMode,
+                        title: "Angel Review",
+                        desc: "Constructive questions, patient follow-ups, supportive tone.",
+                      },
+                      {
+                        id: "tough" as IntensityMode,
+                        title: "Partner Meeting",
+                        desc: "Rigorous unit economics, direct callouts, realistic pressure.",
+                      },
+                      {
+                        id: "shark" as IntensityMode,
+                        title: "Shark Tank Mode",
+                        desc: "All five investors. Interruptions and pointed contradiction challenges.",
+                      },
+                    ].map((mode) => {
+                      const isSelected = intensity === mode.id;
+                      return (
+                        <label
+                          key={mode.id}
+                          htmlFor={`intensity-${mode.id}`}
+                          className={`block p-3.5 rounded-field border transition-subtle cursor-pointer ${
+                            isSelected
+                              ? "bg-amber-50/20 border-border border-l-4 border-l-gold shadow-subtle"
+                              : "bg-surface border-border hover:border-slate-300"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="space-y-0.5">
+                              <span className="text-sm font-bold text-navy block">
+                                {mode.title}
+                              </span>
+                              <p className="text-xs text-text-2 leading-relaxed">{mode.desc}</p>
+                            </div>
+
+                            <div className="mt-0.5">
+                              <input
+                                type="radio"
+                                id={`intensity-${mode.id}`}
+                                name="review-intensity"
+                                value={mode.id}
+                                checked={isSelected}
+                                onChange={() => setIntensity(mode.id)}
+                                className="sr-only"
+                              />
+                              <div
+                                className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                                  isSelected
+                                    ? "border-gold bg-gold text-white"
+                                    : "border-slate-300 bg-white"
+                                }`}
+                                aria-hidden="true"
+                              >
+                                {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                              </div>
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* CTA Action */}
+                <div className="pt-2 space-y-2">
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    size="lg"
+                    isLoading={isSubmitting}
+                    disabled={!isPitchValid}
+                    className="w-full"
+                  >
+                    {isSubmitting ? "Convening the panel..." : "Start Investor Review"}
+                  </Button>
+
+                  {!isPitchValid && (
+                    <p className="text-xs text-text-2 text-center">
+                      {idea.trim().length === 0
+                        ? "Add at least 50 characters to begin."
+                        : idea.trim().length < 50
+                        ? `Add ${50 - idea.trim().length} more characters to begin.`
+                        : "Pitch length exceeds the 6,000 character limit."}
+                    </p>
+                  )}
+                </div>
+              </form>
+            </Card>
           </div>
-        </form>
+
+          {/* Right Column: Sticky "What You Will Get" Panel (5 cols) */}
+          <div className="lg:col-span-5 lg:sticky lg:top-8 space-y-4">
+            <Card goldTopRule={true} className="p-6 md:p-7 space-y-5">
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-gold-dark block mb-1">
+                  Deliverables
+                </span>
+                <h2 className="text-lg font-serif font-bold text-navy">
+                  What you will get
+                </h2>
+              </div>
+
+              <ul className="space-y-3.5 text-xs text-text leading-relaxed">
+                <li className="flex items-start gap-2.5">
+                  <Users className="w-4 h-4 text-navy flex-shrink-0 mt-0.5" aria-hidden="true" />
+                  <span>
+                    <strong>A live five-investor panel</strong> with distinct diligence lenses and real-time conviction calibration.
+                  </span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <FileText className="w-4 h-4 text-navy flex-shrink-0 mt-0.5" aria-hidden="true" />
+                  <span>
+                    <strong>A Due Diligence Ledger</strong> that extracts every claim, flags contradictions, and records evidence gaps.
+                  </span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-navy flex-shrink-0 mt-0.5" aria-hidden="true" />
+                  <span>
+                    <strong>Algorithmic verdicts</strong> computed strictly in code from conviction thresholds with simulated terms.
+                  </span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Award className="w-4 h-4 text-navy flex-shrink-0 mt-0.5" aria-hidden="true" />
+                  <span>
+                    <strong>An Investor Readiness Report</strong> featuring evidence-only rewrites, top risks, and a 7-day action sprint.
+                  </span>
+                </li>
+              </ul>
+
+              {/* Static Preview of Due Diligence Ledger Row */}
+              <div className="pt-2 border-t border-border space-y-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-text-2 block">
+                  Due Diligence Ledger Preview
+                </span>
+                <div className="p-3 bg-surface-2/70 border border-border rounded-field space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-mono font-bold text-navy">DD-01</span>
+                    <Chip variant="verified" size="sm" label="Verified" />
+                  </div>
+                  <p className="text-xs font-semibold text-navy">
+                    Customer acquisition payback under 6 months
+                  </p>
+                  <p className="text-[11px] text-text-2">
+                    Category: Unit economics • Supported by stated cohorts
+                  </p>
+                </div>
+              </div>
+            </Card>
+
+            {/* Quick Context Card */}
+            <div className="p-4 bg-white/70 border border-border rounded-panel text-xs text-text-2 space-y-1">
+              <span className="font-bold text-navy block">Confidential & Private</span>
+              <p>Your session is stored locally with session-scoped cookie tokens. Data is never shared or used for public training.</p>
+            </div>
+          </div>
+        </div>
       </main>
 
-      {/* Footer Disclaimer */}
-      <footer className="border-t border-surface-border/50 py-6 px-6 text-center text-xs text-slate-500">
-        Simulated investors for practice. Verdicts do not predict real investment decisions.
+      {/* Persistent Legal Footer */}
+      <footer className="border-t border-border bg-white px-6 py-4 text-center text-xs text-text-2">
+        <p>GrillRoom uses simulated investors for practice. Verdicts do not predict real investment decisions.</p>
       </footer>
     </div>
   );
