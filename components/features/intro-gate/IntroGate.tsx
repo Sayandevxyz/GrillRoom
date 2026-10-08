@@ -141,8 +141,13 @@ function IntroGateClient({ onEnter }: { onEnter?: () => void }) {
     return null;
   }
 
-  // Pre-mount or already seen: render nothing
-  if (!mounted || !isVisible) {
+  // Before client mount, render plain dark cover when flag is ON to prevent any flash of main app
+  if (!mounted) {
+    return <div className="intro-screen" style={{ background: "#080A0F" }} aria-hidden="true" />;
+  }
+
+  // Already entered during this session: render nothing
+  if (!isVisible) {
     return null;
   }
 
