@@ -3,17 +3,17 @@
 @tailwind utilities;
 
 :root {
-  --bg: #F7F4EF;
+  --bg: #F6EFE1;
   --surface: #FFFFFF;
   --surface-2: #F1F5F9;
   --border: #D8DEE8;
   --text: #111827;
   --text-2: #526071;
-  --navy: #0F172A;
-  --gold: #B88917;
+  --navy: #14284F;
+  --gold: #D4AF37;
   --gold-dark: #8A6510;
-  --cta: #C2410C;
-  --cta-hover: #9A3412;
+  --cta: #D4572B;
+  --cta-hover: #B8441F;
   --success: #15803D;
   --warning: #D97706;
   --danger: #B91C1C;
