@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Chip";
 import { ArrowRight, Printer } from "lucide-react";
+import { PitchRadar } from "@/components/features/radar/PitchRadar";
 
 interface CompareData {
   originalSessionId: string;
@@ -195,6 +196,9 @@ export default function CompareReportPage() {
               </div>
             </div>
           </section>
+
+          {/* Pitch DNA Radar (Feature Flagged) */}
+          <PitchRadar sessionId={data.retrySessionId || sessionId} className="no-print" />
 
           {/* Side-by-Side Conviction Table */}
           <section className="space-y-3">

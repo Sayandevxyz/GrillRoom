@@ -16,6 +16,7 @@ import {
   CalendarCheck,
   HelpCircle,
 } from "lucide-react";
+import { PitchRadar } from "@/components/features/radar/PitchRadar";
 
 interface VerdictItem {
   investor_id: string;
@@ -336,6 +337,9 @@ export default function DebriefReportPage() {
               </p>
             </div>
           </section>
+
+          {/* Section 2.5: Pitch DNA Radar (Feature Flagged) */}
+          <PitchRadar sessionId={sessionId} className="no-print" />
 
           {/* Section 3: Investor Verdicts Table */}
           <section className="space-y-4">

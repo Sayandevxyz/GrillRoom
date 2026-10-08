@@ -12,3 +12,7 @@ export const FEATURE_INTRO_GATE =
 export const FEATURE_REACTIONS =
   typeof process !== "undefined" &&
   process.env.NEXT_PUBLIC_FEATURE_REACTIONS === "true";
+
+export const FEATURE_RADAR =
+  typeof process !== "undefined" &&
+  process.env.NEXT_PUBLIC_FEATURE_RADAR === "true";
