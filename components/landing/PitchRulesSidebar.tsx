@@ -12,7 +12,7 @@ export const PitchRulesSidebar: React.FC = () => {
               Deliverables
             </span>
             <h2 className="text-xl font-serif font-bold text-navy">
-              What you&apos;ll get
+              What Happens in the Room
             </h2>
           </div>
 

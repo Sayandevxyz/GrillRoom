@@ -56,12 +56,13 @@ export async function POST(req: NextRequest) {
         [sessionId]
       );
       if (existing && existing[0]) {
-        return NextResponse.json(existing[0].content_json);
+        const scene = existing[0].content_json;
+        return NextResponse.json({ scene, ...scene });
       }
     } else {
       const existing = mockDb.behind_doors.get(sessionId) as BehindDoorsSceneData | undefined;
       if (existing) {
-        return NextResponse.json(existing);
+        return NextResponse.json({ scene: existing, ...existing });
       }
     }
 
@@ -180,7 +181,7 @@ Write a 6 to 8 turn confidential partner deliberation dialogue now. Return stric
       mockDb.behind_doors.set(sessionId, sceneData as unknown as Record<string, unknown>);
     }
 
-    return NextResponse.json(sceneData);
+    return NextResponse.json({ scene: sceneData, ...sceneData });
   } catch (err: unknown) {
     const errorId = logServerError(err, "Behind Closed Doors Error");
     return NextResponse.json(

@@ -16,7 +16,11 @@ vi.mock("openai", () => {
   };
 });
 
-import { createChatCompletion } from "@/lib/llm/groq";
+import {
+  createChatCompletion,
+  createStreamingChatCompletion,
+  GroqApiError,
+} from "@/lib/llm/groq";
 
 describe("JSON Fallback Parser & LLM Client Edge Cases", () => {
   describe("parseLlmJson Robustness", () => {
@@ -108,6 +112,51 @@ describe("JSON Fallback Parser & LLM Client Edge Cases", () => {
 
       const res = await createChatCompletion([{ role: "user", content: "Hello" }]);
       expect(res).toBe("Success from fallback model");
+    });
+
+    it("throws GroqApiError when all models fail in createChatCompletion", async () => {
+      mockCreate.mockRejectedValue(new Error("Fatal connection failure"));
+      await expect(
+        createChatCompletion([{ role: "user", content: "Hello" }])
+      ).rejects.toThrow(GroqApiError);
+    });
+
+    it("executes createStreamingChatCompletion successfully", async () => {
+      const mockStream = {
+        [Symbol.asyncIterator]: async function* () {
+          yield { choices: [{ delta: { content: "chunk" } }] };
+        },
+      };
+      mockCreate.mockResolvedValueOnce(mockStream);
+
+      const stream = await createStreamingChatCompletion(
+        [{ role: "user", content: "Stream" }],
+        { reasoningEffort: "low" }
+      );
+      expect(stream).toBeDefined();
+    });
+
+    it("falls back to secondary model on stream error before succeeding", async () => {
+      const mockStream = {
+        [Symbol.asyncIterator]: async function* () {
+          yield { choices: [{ delta: { content: "chunk" } }] };
+        },
+      };
+      mockCreate
+        .mockRejectedValueOnce(new Error("Model stream failed"))
+        .mockResolvedValueOnce(mockStream);
+
+      const stream = await createStreamingChatCompletion([
+        { role: "user", content: "Stream" },
+      ]);
+      expect(stream).toBeDefined();
+    });
+
+    it("throws GroqApiError when all stream models fail", async () => {
+      mockCreate.mockRejectedValue(new Error("All streaming models failed"));
+      await expect(
+        createStreamingChatCompletion([{ role: "user", content: "Stream" }])
+      ).rejects.toThrow(GroqApiError);
     });
   });
 });

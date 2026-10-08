@@ -68,7 +68,12 @@ export function SessionHeader({
           <button
             onClick={onToggleLedgerDrawer}
             aria-expanded={showLedgerDrawer}
-            className="xl:hidden inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-field bg-slate-800 text-xs font-semibold text-slate-200 hover:text-white border border-slate-700 transition-subtle shrink-0"
+            aria-controls="ledger-drawer"
+            className={`xl:hidden inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-field text-xs font-semibold border transition-subtle shrink-0 ${
+              showLedgerDrawer
+                ? "bg-slate-700 text-white border-gold ring-1 ring-gold/40 shadow-sm"
+                : "bg-slate-800 text-slate-200 hover:text-white border-slate-700"
+            }`}
             aria-label="Toggle Due Diligence Ledger"
           >
             <SlidersHorizontal className="w-3.5 h-3.5" aria-hidden="true" />

@@ -32,10 +32,34 @@ export default function SetupPage() {
   const [uploadedFile, setUploadedFile] = useState<{ name: string; size: string } | null>(null);
   const [pdfText, setPdfText] = useState("");
   const [isUploadingPdf, setIsUploadingPdf] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
+
+  const samplePitch =
+    "We have built ApexShield, an autonomous AI security scanner for fintech banks. We charge $4,000 per month on annual contracts. We have 12 signed pilot customers and $48,000 in monthly recurring revenue. Our customer acquisition cost is $650, which pays back in less than 2 months. We are seeking $750,000 for 10% equity.";
+
+  const handleUseSamplePitch = () => {
+    setIdea(samplePitch);
+    setIndustry("Technology / B2B SaaS");
+    setStage("Seed");
+    setAsk("$750,000 for 10%");
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      if (file.type === "application/pdf" || file.name.endsWith(".pdf")) {
+        handlePdfUpload(file);
+      } else {
+        setErrorMsg("Only PDF files are supported for deck upload.");
+      }
+    }
+  };
 
   const isPitchValid = idea.trim().length >= 50 && idea.length <= 6000;
 
@@ -171,6 +195,46 @@ export default function SetupPage() {
           </div>
         </div>
 
+        {/* Trust & Architecture Explainer Strip */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+          <div className="bg-white/80 border border-border rounded-field p-3.5 shadow-subtle flex flex-col justify-between">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="w-2 h-2 rounded-full bg-cta" aria-hidden="true" />
+              <h3 className="text-xs font-bold text-navy">Deterministic Planner</h3>
+            </div>
+            <p className="text-[11px] text-text-2 leading-relaxed">
+              Questions chosen by coverage gaps, not random hallucination.
+            </p>
+          </div>
+          <div className="bg-white/80 border border-border rounded-field p-3.5 shadow-subtle flex flex-col justify-between">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="w-2 h-2 rounded-full bg-gold" aria-hidden="true" />
+              <h3 className="text-xs font-bold text-navy">Due Diligence Ledger</h3>
+            </div>
+            <p className="text-[11px] text-text-2 leading-relaxed">
+              Tracks claimed vs proven facts and flags contradictions.
+            </p>
+          </div>
+          <div className="bg-white/80 border border-border rounded-field p-3.5 shadow-subtle flex flex-col justify-between">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-600" aria-hidden="true" />
+              <h3 className="text-xs font-bold text-navy">Algorithmic Verdicts</h3>
+            </div>
+            <p className="text-[11px] text-text-2 leading-relaxed">
+              Code-computed conviction scores and simulated term sheets.
+            </p>
+          </div>
+          <div className="bg-white/80 border border-border rounded-field p-3.5 shadow-subtle flex flex-col justify-between">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="w-2 h-2 rounded-full bg-blue-600" aria-hidden="true" />
+              <h3 className="text-xs font-bold text-navy">100% Confidential</h3>
+            </div>
+            <p className="text-[11px] text-text-2 leading-relaxed">
+              In-memory fallback & zero pitch retention. Practice risk-free.
+            </p>
+          </div>
+        </div>
+
         {/* Two-Column Setup Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
           {/* Left Column: Form Card (7 cols) */}
@@ -189,9 +253,18 @@ export default function SetupPage() {
                 {/* Section 1: Pitch Brief */}
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-[0.08em] text-gold-dark">
-                      1 Your Pitch
-                    </span>
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-xs font-bold uppercase tracking-[0.08em] text-gold-dark">
+                        1 Your Pitch
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleUseSamplePitch}
+                        className="text-[11px] font-medium text-cta hover:text-cta-hover underline transition-subtle"
+                      >
+                        Try sample pitch
+                      </button>
+                    </div>
                     <span
                       className={`text-xs tabular-nums font-medium ${
                         idea.length > 6000
@@ -210,7 +283,7 @@ export default function SetupPage() {
                     rows={5}
                     value={idea}
                     onChange={(e) => setIdea(e.target.value)}
-                    placeholder="Describe your startup: What urgent problem do you solve? Who is the customer? What is your pricing and traction? (e.g. ₹3,000/month, 8 signed pilot customers, ₹400 CAC...)"
+                    placeholder="Paste your investor pitch or describe your startup: What urgent problem do you solve? Who is the customer? What is your pricing and traction? (e.g. $3,000/month, 8 signed pilot customers, $400 CAC...)"
                     className="w-full bg-white border border-border focus:border-navy rounded-field p-3.5 text-text placeholder:text-slate-400 focus:outline-none transition-subtle text-sm leading-relaxed resize-y"
                     required
                   />
@@ -228,7 +301,20 @@ export default function SetupPage() {
                   {!uploadedFile ? (
                     <div
                       onClick={() => fileInputRef.current?.click()}
-                      className="border border-dashed border-border hover:border-slate-400 bg-surface-2/60 hover:bg-surface-2 rounded-field p-6 text-center cursor-pointer transition-subtle focus-within:ring-2 focus-within:ring-info"
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setIsDragging(true);
+                      }}
+                      onDragLeave={(e) => {
+                        e.preventDefault();
+                        setIsDragging(false);
+                      }}
+                      onDrop={handleDrop}
+                      className={`border border-dashed rounded-field p-6 text-center cursor-pointer transition-subtle focus-within:ring-2 focus-within:ring-info ${
+                        isDragging
+                          ? "border-gold bg-amber-50/60"
+                          : "border-border hover:border-slate-400 bg-surface-2/60 hover:bg-surface-2"
+                      }`}
                     >
                       <input
                         ref={fileInputRef}
@@ -411,7 +497,7 @@ export default function SetupPage() {
                     disabled={!isPitchValid}
                     className="w-full bg-cta hover:bg-cta-hover focus-visible:ring-gold text-white font-semibold py-3.5 shadow-subtle text-base"
                   >
-                    {isSubmitting ? "Convening the panel..." : "Start the Grilling →"}
+                    {isSubmitting ? "Convening the panel..." : "Enter the GrillRoom →"}
                   </Button>
 
                   <p className="text-xs text-text-2 text-center">
