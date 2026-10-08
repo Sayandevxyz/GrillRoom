@@ -19,7 +19,7 @@ describe("Core Logic & Edge Cases Suite", () => {
           "x-forwarded-for": "3.3.3.3",
         },
       });
-      expect(getClientIp(reqAll)).toBe("1.1.1.1");
+      expect(getClientIp(reqAll.headers)).toBe("1.1.1.1");
 
       const reqReal = new NextRequest("http://localhost:3000", {
         headers: {
@@ -27,17 +27,17 @@ describe("Core Logic & Edge Cases Suite", () => {
           "x-forwarded-for": "3.3.3.3",
         },
       });
-      expect(getClientIp(reqReal)).toBe("2.2.2.2");
+      expect(getClientIp(reqReal.headers)).toBe("2.2.2.2");
 
       const reqForwarded = new NextRequest("http://localhost:3000", {
         headers: {
           "x-forwarded-for": "3.3.3.3, 4.4.4.4",
         },
       });
-      expect(getClientIp(reqForwarded)).toBe("3.3.3.3");
+      expect(getClientIp(reqForwarded.headers)).toBe("3.3.3.3");
 
       const reqEmpty = new NextRequest("http://localhost:3000");
-      expect(getClientIp(reqEmpty)).toBe("127.0.0.1");
+      expect(getClientIp(reqEmpty.headers)).toBe("127.0.0.1");
     });
 
     it("sanitizes case variants of </founder_text> and unicode control characters", () => {
@@ -81,7 +81,7 @@ describe("Core Logic & Edge Cases Suite", () => {
 
     it("executes query against mock database safely", async () => {
       const result = await query("SELECT 1", []);
-      expect(result.rows).toBeDefined();
+      expect(result).toBeDefined();
     });
   });
 
@@ -99,8 +99,8 @@ describe("Core Logic & Edge Cases Suite", () => {
 
       const radar = await getSessionRadar(sessId);
       expect(radar).toBeDefined();
-      expect(radar?.directness).toBe(80);
-      expect(radar?.specificity).toBe(70);
+      expect(radar?.current.directness).toBe(80);
+      expect(radar?.current.specificity).toBe(70);
     });
   });
 

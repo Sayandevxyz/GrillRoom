@@ -19,6 +19,10 @@ describe("Custom Hooks Suite", () => {
     vi.clearAllMocks();
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   describe("useVerdictFlow", () => {
     it("initializes with default drawer closed and debrief disabled when under 3 exchanges", () => {
       const { result } = renderHook(() => useVerdictFlow("sess-1", 2));

@@ -182,3 +182,45 @@ export function toClaimSnippets(claims: ClaimRecord[]): ClaimSnippet[] {
     ladder_level: c.ladder_level,
   }));
 }
+
+/**
+ * Creates initial claim records synchronously for offline testing or initial pitch parsing.
+ */
+export function createInitialClaims(
+  sessionId: string,
+  pitchText: string
+): ClaimRecord[] {
+  const sentences = pitchText.split(/[.!?]+/).map((s) => s.trim()).filter((s) => s.length > 5);
+  const items = sentences.length > 0 ? sentences : [pitchText];
+  return items.map((text, idx) => ({
+    id: idx + 1,
+    session_id: sessionId,
+    claim_text: text,
+    category: /margin|revenue|cac|ltv|\$|profit/i.test(text) ? "unit_economics" : "problem",
+    status: "unverified",
+    severity: 3,
+    source_turn: 0,
+    thread_state: "open",
+    ladder_level: 1,
+    followups_used: 0,
+    last_asked_by: null,
+  }));
+}
+
+/**
+ * Evaluates claims against a founder's answer for test simulation and synchronous verification.
+ */
+export function evaluateTurnClaims(
+  currentClaims: ClaimRecord[],
+  founderAnswer: string,
+  _turnIndex: number,
+  lastAskedBy?: string
+): ClaimRecord[] {
+  return currentClaims.map((c) => {
+    if (/verify|verifying|proof|metric|audited|signed/i.test(founderAnswer)) {
+      return { ...c, status: "evidenced" as const, last_asked_by: lastAskedBy ?? c.last_asked_by };
+    }
+    return c;
+  });
+}
+

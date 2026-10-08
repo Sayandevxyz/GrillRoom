@@ -16,19 +16,23 @@ interface MockDB {
   rate_limits: Map<string, Record<string, unknown>>;
 }
 
-const mockDb: MockDB = {
-  sessions: new Map(),
-  panel_members: new Map(),
-  turns: [],
-  claims: [],
-  evaluations: [],
-  convictions: [],
-  verdicts: [],
-  reports: new Map(),
-  behind_doors: new Map(),
-  knowledge_chunks: [],
-  rate_limits: new Map(),
-};
+const globalForMockDb = globalThis as unknown as { mockDb?: MockDB };
+
+export const mockDb: MockDB =
+  globalForMockDb.mockDb ??
+  (globalForMockDb.mockDb = {
+    sessions: new Map(),
+    panel_members: new Map(),
+    turns: [],
+    claims: [],
+    evaluations: [],
+    convictions: [],
+    verdicts: [],
+    reports: new Map(),
+    behind_doors: new Map(),
+    knowledge_chunks: [],
+    rate_limits: new Map(),
+  });
 
 export function isNeonConfigured(): boolean {
   const url = process.env.DATABASE_URL;
@@ -107,5 +111,3 @@ function executeMockQuery<T>(sqlText: string, params: unknown[]): T[] {
   // Fallback placeholder
   return [] as T[];
 }
-
-export { mockDb };

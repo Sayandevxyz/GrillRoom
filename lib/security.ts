@@ -10,7 +10,7 @@ import { logger } from "./logger";
  */
 export function sanitizeFounderText(input: string, maxLength: number = 4000): string {
   if (!input || typeof input !== "string") return "";
-  const sliced = input.slice(0, maxLength);
+  const sliced = input.slice(0, maxLength).replace(/\0/g, "");
   // Prevent escaping the custom XML-style delimiter
   return sliced.replace(/<\/founder_text>/gi, "&lt;/founder_text&gt;");
 }
@@ -20,10 +20,17 @@ export function wrapFounderText(rawText: string, maxLength: number = 4000): stri
   return `<founder_text>\n${clean}\n</founder_text>`;
 }
 
+export function wrapFounderPrompt(rawText: string, maxLength: number = 4000): string {
+  return wrapFounderText(rawText, maxLength);
+}
+
 /**
  * Defensive client IP derivation.
  */
-export function getClientIp(headers: Headers): string {
+export function getClientIp(headers: Headers | { get(name: string): string | null }): string {
+  const cfIp = headers.get("cf-connecting-ip");
+  if (cfIp) return cfIp.trim().slice(0, 45);
+
   const realIp = headers.get("x-real-ip");
   if (realIp) return realIp.trim().slice(0, 45);
 

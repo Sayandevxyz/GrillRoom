@@ -35,6 +35,7 @@ export function getGroqClient(): OpenAI {
     apiKey,
     baseURL,
     timeout: 60000,
+    dangerouslyAllowBrowser: true,
   });
 }
 

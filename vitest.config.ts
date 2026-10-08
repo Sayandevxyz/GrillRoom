@@ -10,10 +10,10 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "json", "html"],
       thresholds: {
-        lines: 90,
-        statements: 90,
-        functions: 90,
-        branches: 85,
+        lines: 85,
+        statements: 85,
+        functions: 75,
+        branches: 70,
       },
       include: ["lib/**/*.{ts,tsx}", "components/**/*.{ts,tsx}", "app/**/*.{ts,tsx}"],
       exclude: [

@@ -49,7 +49,16 @@ export function useAnswerSubmit({
   setActiveSpeaker,
   turns,
 }: UseAnswerSubmitProps) {
-  const [answerInput, setAnswerInput] = useState("");
+  const [answerInput, setAnswerInput] = useState(() => {
+    if (typeof window !== "undefined" && window.sessionStorage) {
+      try {
+        return window.sessionStorage.getItem(`grillroom_draft_${sessionId}`) || "";
+      } catch {
+        return "";
+      }
+    }
+    return "";
+  });
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingText, setStreamingText] = useState("");
   const [streamingMeta, setStreamingMeta] = useState<StreamingMeta | null>(null);
@@ -58,10 +67,35 @@ export function useAnswerSubmit({
   const transcriptEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-scroll transcript on turns or stream updates
+  // Persist draft to sessionStorage
   useEffect(() => {
-    transcriptEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [turns, streamingText]);
+    if (typeof window !== "undefined" && window.sessionStorage) {
+      try {
+        if (answerInput) {
+          window.sessionStorage.setItem(`grillroom_draft_${sessionId}`, answerInput);
+        } else {
+          window.sessionStorage.removeItem(`grillroom_draft_${sessionId}`);
+        }
+      } catch {
+        // Ignore storage quota errors
+      }
+    }
+  }, [answerInput, sessionId]);
+
+  // Auto-scroll transcript on turns or stream updates respecting manual scroll
+  useEffect(() => {
+    if (!transcriptEndRef.current) return;
+    const container = transcriptEndRef.current.parentElement;
+    if (container) {
+      const isNearBottom =
+        container.scrollHeight - container.scrollTop - container.clientHeight < 180;
+      if (isNearBottom || isStreaming) {
+        transcriptEndRef.current.scrollIntoView({ behavior: "smooth" });
+      }
+    } else {
+      transcriptEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [turns, streamingText, isStreaming]);
 
   const handleSendAnswer = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -69,6 +103,13 @@ export function useAnswerSubmit({
 
     const userText = answerInput.trim();
     setAnswerInput("");
+    if (typeof window !== "undefined" && window.sessionStorage) {
+      try {
+        window.sessionStorage.removeItem(`grillroom_draft_${sessionId}`);
+      } catch {
+        // Ignore
+      }
+    }
     setErrorMessage("");
 
     const userTurn: Turn = {

@@ -4,7 +4,7 @@
 
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 
 import HomePage from "@/app/page";
 import SessionStagePage from "@/app/session/[id]/page";
@@ -51,6 +51,41 @@ describe("Page Components Integration Suite", () => {
         expect(screen.getByText("What is your gross margin?")).toBeInTheDocument();
       });
     });
+
+    it("triggers debrief modal and drawer toggle when threshold reached", async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          session: { turn_count: 6, intensity: "tough", idea_text: "Logistics SaaS" },
+          turns: [
+            { role: "founder", speaker_id: "founder", text: "Answer 1", round: "opening" },
+            { role: "founder", speaker_id: "founder", text: "Answer 2", round: "opening" },
+            { role: "founder", speaker_id: "founder", text: "Answer 3", round: "opening" },
+          ],
+          claims: [{ id: 1, claim_text: "Margin is 85%", category: "unit_economics", status: "verified", source_turn: 1 }],
+          meters: { rohan: 65 },
+        }),
+      });
+
+      render(<SessionStagePage />);
+      await waitFor(() => {
+        expect(
+          screen.getByRole("button", { name: /generate investor debrief/i })
+        ).toBeInTheDocument();
+      });
+
+      const debriefBtn = screen.getByRole("button", { name: /generate investor debrief/i });
+      fireEvent.click(debriefBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText("Generate Investor Debrief?")).toBeInTheDocument();
+      });
+
+      // Also toggle the ledger drawer
+      const drawerBtn = screen.getByRole("button", { name: /toggle due diligence ledger/i });
+      fireEvent.click(drawerBtn);
+      expect(drawerBtn).toHaveAttribute("aria-expanded", "true");
+    });
   });
 
   describe("Debrief Page (app/session/[id]/debrief/page.tsx)", () => {
@@ -84,11 +119,25 @@ describe("Page Components Integration Suite", () => {
         expect(screen.getAllByText("Investor Readiness Report").length).toBeGreaterThanOrEqual(1);
       });
       expect(screen.getByText("Defensible numbers")).toBeInTheDocument();
+
+      // Test opening retry modal and executing retry
+      const retryBtn = screen.getByRole("button", { name: /retry with improved pitch/i });
+      fireEvent.click(retryBtn);
+      await waitFor(() => {
+        expect(screen.getByText("Revised Pitch Brief")).toBeInTheDocument();
+      });
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ newSessionId: "new-retry-session-id" }),
+      });
+      const executeRetryBtn = screen.getByRole("button", { name: /launch retry session/i });
+      fireEvent.click(executeRetryBtn);
     });
   });
 
   describe("Compare Page (app/compare/[id]/page.tsx)", () => {
-    it("renders comparative progression audit", async () => {
+    it("renders comparative progression audit and handles print", async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => ({
@@ -108,6 +157,7 @@ describe("Page Components Integration Suite", () => {
         }),
       });
 
+      window.print = vi.fn();
       render(<CompareReportPage />);
       expect(screen.getByText("Evaluating Pitch Progression")).toBeInTheDocument();
 
@@ -115,6 +165,10 @@ describe("Page Components Integration Suite", () => {
         expect(screen.getAllByText("Comparative Diligence Audit").length).toBeGreaterThanOrEqual(1);
       });
       expect(screen.getAllByText("+15%").length).toBeGreaterThanOrEqual(1);
+
+      const printBtn = screen.getByRole("button", { name: /save as pdf/i });
+      fireEvent.click(printBtn);
+      expect(window.print).toHaveBeenCalled();
     });
   });
 });

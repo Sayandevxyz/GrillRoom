@@ -384,6 +384,7 @@ describe("API Routes Integration Tests", () => {
 
   describe("POST /api/session/behind-doors", () => {
     it("returns 404 when behind-doors feature flag is disabled", async () => {
+      vi.spyOn(flagsModule, "FEATURE_BEHIND_DOORS", "get").mockReturnValue(false);
       const req = createJsonRequest("/api/session/behind-doors", { sessionId: "00000000-0000-0000-0000-000000000000" });
       const res = await behindDoorsRoute(req);
       expect(res.status).toBe(404);
@@ -401,7 +402,7 @@ describe("API Routes Integration Tests", () => {
         status: "verdict",
       });
 
-      const req = createJsonRequest("/api/session/behind-doors", { sessionId: sessId });
+      const req = createJsonRequest("/api/session/behind-doors", { sessionId: sessId }, "owner_token=tok");
       const res = await behindDoorsRoute(req);
       expect(res.status).toBe(200);
       const json = await res.json();
@@ -411,6 +412,7 @@ describe("API Routes Integration Tests", () => {
 
   describe("GET /api/share-card/[sessionId]", () => {
     it("returns share card SVG response", async () => {
+      vi.spyOn(flagsModule, "FEATURE_SHARE_CARD", "get").mockReturnValue(true);
       const sessId = "aaaa1111-bb22-cc33-dd44-eeee55556666";
       mockDb.sessions.set(sessId, {
         id: sessId,
@@ -419,11 +421,40 @@ describe("API Routes Integration Tests", () => {
         turn_count: 4,
         status: "verdict",
       });
+      mockDb.reports.set(sessId, {
+        readiness_score: 80,
+        verdicts: [
+          { investor_id: "rohan", decision: "In", reason: "Strong metrics", simulated_offer: "$500k for 10%" },
+          { investor_id: "meera", decision: "Out", reason: "TAM concerns" },
+        ],
+      });
+      mockDb.claims.push({
+        id: 101,
+        session_id: sessId,
+        claim_text: "10 customers",
+        status: "verified",
+        category: "traction",
+        source_turn: 1,
+      });
+      mockDb.turns.push({
+        session_id: sessId,
+        role: "founder",
+        text: "We have 10 customers",
+        turn_index: 1,
+        created_at: new Date(),
+      });
 
       const req = new NextRequest(`http://localhost:3000/api/share-card/${sessId}`);
       const res = await shareCardRoute(req, { params: Promise.resolve({ sessionId: sessId }) });
       expect(res.status).toBe(200);
-      expect(res.headers.get("content-type")).toContain("image/svg+xml");
+      expect(res.headers.get("content-type")).toMatch(/^image\/(png|svg\+xml)/);
+    });
+
+    it("returns 400 when sessionId is invalid format", async () => {
+      vi.spyOn(flagsModule, "FEATURE_SHARE_CARD", "get").mockReturnValue(true);
+      const req = new NextRequest("http://localhost:3000/api/share-card/invalid-id");
+      const res = await shareCardRoute(req, { params: Promise.resolve({ sessionId: "invalid-id" }) });
+      expect(res.status).toBe(400);
     });
   });
 
