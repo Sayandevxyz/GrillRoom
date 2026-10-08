@@ -56,7 +56,7 @@ export function LiveDialogueCard({
   transcriptEndRef,
 }: LiveDialogueCardProps) {
   return (
-    <Card className="p-4 md:p-5 flex flex-col h-[calc(100dvh-230px)] min-h-[480px] max-h-[760px]">
+    <Card className="p-4 md:p-5 flex flex-col h-[calc(100dvh-200px)] min-h-[540px]">
       {/* Dialogue Header */}
       <div className="flex items-center justify-between pb-3 border-b border-border mb-3 flex-shrink-0">
         <div>
@@ -89,7 +89,7 @@ export function LiveDialogueCard({
             />
           </button>
           {!isPitchCollapsed && (
-            <div className="mt-2 p-3 bg-slate-50 border border-border rounded-field text-xs text-text leading-relaxed max-h-28 overflow-y-auto whitespace-pre-wrap">
+            <div className="mt-2 p-3 bg-slate-50 border border-border rounded-field text-xs text-text leading-relaxed max-h-20 overflow-y-auto whitespace-pre-wrap">
               {pitchText}
             </div>
           )}
@@ -98,7 +98,7 @@ export function LiveDialogueCard({
 
       {/* Transcript Stream (Internally scrolling) */}
       <div
-        className="flex-1 overflow-y-auto space-y-3.5 pr-1 min-h-0"
+        className="flex-1 overflow-y-auto space-y-3.5 pr-1 min-h-0 scroll-smooth"
         aria-live="polite"
         aria-relevant="additions text"
       >

@@ -91,7 +91,7 @@ export default function SessionStagePage() {
       />
 
       {/* Main Review Area */}
-      <main id="main-content" className="flex-1 max-w-6xl mx-auto w-full px-4 md:px-6 py-4 space-y-4">
+      <main id="main-content" className="flex-1 max-w-6xl mx-auto w-full px-4 md:px-6 py-2 space-y-3">
         <h1 className="sr-only">GrillRoom Live Due Diligence Boardroom</h1>
 
         {/* 2. Investor Panel Strip (5 compact executive cards) */}
