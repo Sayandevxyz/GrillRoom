@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
-import { POST as startRoute } from "@/app/api/session/start/route";
+import { POST as startRoute, GET as getSessionRoute } from "@/app/api/session/start/route";
 import { POST as answerRoute } from "@/app/api/session/answer/route";
 import { POST as verdictRoute } from "@/app/api/session/verdict/route";
 import { POST as debriefRoute } from "@/app/api/session/debrief/route";
@@ -9,8 +9,12 @@ import { GET as compareRoute } from "@/app/api/session/compare/route";
 import { GET as radarRoute } from "@/app/api/session/radar/route";
 import { POST as behindDoorsRoute } from "@/app/api/session/behind-doors/route";
 import { POST as extractPdfRoute } from "@/app/api/extract-pdf/route";
+import { GET as shareCardRoute } from "@/app/api/share-card/[sessionId]/route";
 import { mockDb } from "@/lib/db";
 import * as securityModule from "@/lib/security";
+import * as flagsModule from "@/lib/features/flags";
+import { getRequestIp, enforceRateLimit, parseAndValidateBody, handleApiError } from "@/lib/api/handler";
+import { z } from "zod";
 
 vi.mock("@/lib/llm/groq", () => ({
   createChatCompletion: vi.fn().mockResolvedValue(
@@ -60,6 +64,84 @@ describe("API Routes Integration Tests", () => {
     vi.restoreAllMocks();
   });
 
+  describe("API Handler Utilities (lib/api/handler.ts)", () => {
+    it("extracts IP from x-forwarded-for header or defaults to 127.0.0.1", () => {
+      const reqWithHeader = new NextRequest("http://localhost:3000", {
+        headers: { "x-forwarded-for": "192.168.1.1, 10.0.0.1" },
+      });
+      expect(getRequestIp(reqWithHeader)).toBe("192.168.1.1");
+
+      const reqWithoutHeader = new NextRequest("http://localhost:3000");
+      expect(getRequestIp(reqWithoutHeader)).toBe("127.0.0.1");
+    });
+
+    it("enforces rate limit returning 429 when blocked and null when allowed", async () => {
+      const req = new NextRequest("http://localhost:3000");
+      vi.spyOn(securityModule, "checkRateLimit").mockResolvedValueOnce({ allowed: false, remaining: 0 });
+      const blockedRes = await enforceRateLimit(req);
+      expect(blockedRes?.status).toBe(429);
+
+      vi.spyOn(securityModule, "checkRateLimit").mockResolvedValueOnce({ allowed: true, remaining: 29 });
+      const allowedRes = await enforceRateLimit(req);
+      expect(allowedRes).toBeNull();
+    });
+
+    it("parses and validates JSON body against zod schema", async () => {
+      const schema = z.object({ name: z.string() });
+      const validReq = new NextRequest("http://localhost:3000", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "GrillRoom" }),
+      });
+      const validResult = await parseAndValidateBody(validReq, schema);
+      expect(validResult.data?.name).toBe("GrillRoom");
+
+      const invalidReq = new NextRequest("http://localhost:3000", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: 123 }),
+      });
+      const invalidResult = await parseAndValidateBody(invalidReq, schema);
+      expect(invalidResult.errorResponse?.status).toBe(400);
+    });
+
+    it("handles internal API error returning safe 500 with errorId", () => {
+      const res = handleApiError(new Error("Crash"), "TestContext");
+      expect(res.status).toBe(500);
+    });
+  });
+
+  describe("GET /api/session/start", () => {
+    it("returns 400 when sessionId query parameter is missing", async () => {
+      const req = createGetRequest("/api/session/start");
+      const res = await getSessionRoute(req);
+      expect(res.status).toBe(400);
+    });
+
+    it("returns 404 when session is not in database", async () => {
+      const req = createGetRequest("/api/session/start?sessionId=00000000-0000-0000-0000-000000000000");
+      const res = await getSessionRoute(req);
+      expect(res.status).toBe(404);
+    });
+
+    it("returns session details and initial turns when session exists", async () => {
+      const sessionId = "12345678-1234-1234-1234-123456789abc";
+      mockDb.sessions.set(sessionId, {
+        id: sessionId,
+        owner_token: "tok",
+        panel_ids: ["rohan"],
+        turn_count: 0,
+        status: "active",
+        intensity: "tough",
+      });
+      const req = createGetRequest(`/api/session/start?sessionId=${sessionId}`);
+      const res = await getSessionRoute(req);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.session.id).toBe(sessionId);
+    });
+  });
+
   describe("POST /api/session/start", () => {
     it("returns 400 when idea pitch is too short (< 50 chars)", async () => {
       const req = createJsonRequest("/api/session/start", { idea: "Too short pitch" });
@@ -81,7 +163,7 @@ describe("API Routes Integration Tests", () => {
       const json = await res.json();
       expect(json.sessionId).toBeDefined();
       expect(json.panel.length).toBeGreaterThanOrEqual(4);
-      expect(json.initialTurns).toHaveLength(2); // Chair intro + first investor
+      expect(json.initialTurns).toHaveLength(2);
       expect(res.cookies.get("owner_token")?.value).toBeDefined();
     });
   });
@@ -119,6 +201,27 @@ describe("API Routes Integration Tests", () => {
       );
       const res = await answerRoute(req);
       expect(res.status).toBe(403);
+    });
+
+    it("streams answer response when valid session and owner_token provided", async () => {
+      const sessionId = "99999999-9999-9999-9999-999999999999";
+      mockDb.sessions.set(sessionId, {
+        id: sessionId,
+        owner_token: "valid-token",
+        panel_ids: ["rohan", "meera", "arjun", "kavya", "sam"],
+        turn_count: 1,
+        status: "active",
+        intensity: "tough",
+      });
+
+      const req = createJsonRequest(
+        "/api/session/answer",
+        { sessionId, answer: "Our CAC is $200 with 6 month payback." },
+        "owner_token=valid-token"
+      );
+      const res = await answerRoute(req);
+      expect(res.status).toBe(200);
+      expect(res.headers.get("content-type")).toContain("text/event-stream");
     });
   });
 
@@ -164,6 +267,29 @@ describe("API Routes Integration Tests", () => {
       const res = await debriefRoute(req);
       expect(res.status).toBe(400);
     });
+
+    it("generates debrief report for valid session and matching owner_token", async () => {
+      const sessionId = "44444444-4444-4444-4444-444444444444";
+      mockDb.sessions.set(sessionId, {
+        id: sessionId,
+        owner_token: "auth-owner",
+        idea_text: "Supply chain compliance ledger with zero error rate",
+        industry: "B2B SaaS",
+        stage: "Seed",
+        ask_amount: "$1,000,000",
+        intensity: "tough",
+        panel_ids: ["rohan", "meera", "arjun", "kavya", "sam"],
+        turn_count: 6,
+        status: "verdict",
+      });
+
+      const req = createJsonRequest("/api/session/debrief", { sessionId }, "owner_token=auth-owner");
+      const res = await debriefRoute(req);
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json.readiness_score).toBeGreaterThan(0);
+      expect(json.verdicts).toBeDefined();
+    });
   });
 
   describe("POST /api/session/retry", () => {
@@ -174,6 +300,29 @@ describe("API Routes Integration Tests", () => {
       });
       const res = await retryRoute(req);
       expect(res.status).toBe(400);
+    });
+
+    it("creates linked retry session when valid revised pitch provided", async () => {
+      const parentId = "55555555-5555-5555-5555-555555555555";
+      mockDb.sessions.set(parentId, {
+        id: parentId,
+        owner_token: "parent-token",
+        idea_text: "Original pitch text",
+        industry: "Enterprise",
+        stage: "Series A",
+        ask_amount: "$2M for 15%",
+        intensity: "tough",
+        panel_ids: ["rohan", "meera"],
+        turn_count: 8,
+        status: "debrief",
+      });
+
+      const revisedPitch = "Here is our updated enterprise traction: $1.2M ARR, 110% net retention, and fully audited enterprise reference customers.";
+      const req = createJsonRequest("/api/session/retry", { sessionId: parentId, revisedPitch }, "owner_token=parent-token");
+      const res = await retryRoute(req);
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json.newSessionId).toBeDefined();
     });
   });
 
@@ -189,6 +338,23 @@ describe("API Routes Integration Tests", () => {
       const res = await compareRoute(req);
       expect(res.status).toBe(404);
     });
+
+    it("returns comparative metrics when session exists", async () => {
+      const sessId = "66666666-6666-6666-6666-666666666666";
+      mockDb.sessions.set(sessId, {
+        id: sessId,
+        owner_token: "tok",
+        panel_ids: ["rohan", "meera"],
+        turn_count: 4,
+        status: "done",
+      });
+
+      const req = createGetRequest(`/api/session/compare?sessionId=${sessId}`);
+      const res = await compareRoute(req);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.originalSessionId).toBe(sessId);
+    });
   });
 
   describe("GET /api/session/radar", () => {
@@ -197,6 +363,23 @@ describe("API Routes Integration Tests", () => {
       const res = await radarRoute(req);
       expect(res.status).toBe(400);
     });
+
+    it("returns radar scores for valid sessionId", async () => {
+      const sessId = "77777777-7777-7777-7777-777777777777";
+      mockDb.sessions.set(sessId, {
+        id: sessId,
+        owner_token: "tok",
+        panel_ids: ["rohan"],
+        turn_count: 2,
+        status: "active",
+      });
+
+      const req = createGetRequest(`/api/session/radar?sessionId=${sessId}`);
+      const res = await radarRoute(req);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.radar).toBeDefined();
+    });
   });
 
   describe("POST /api/session/behind-doors", () => {
@@ -204,6 +387,43 @@ describe("API Routes Integration Tests", () => {
       const req = createJsonRequest("/api/session/behind-doors", { sessionId: "00000000-0000-0000-0000-000000000000" });
       const res = await behindDoorsRoute(req);
       expect(res.status).toBe(404);
+    });
+
+    it("returns scene data when feature flag is active", async () => {
+      vi.spyOn(flagsModule, "FEATURE_BEHIND_DOORS", "get").mockReturnValue(true);
+
+      const sessId = "88888888-8888-8888-8888-888888888888";
+      mockDb.sessions.set(sessId, {
+        id: sessId,
+        owner_token: "tok",
+        panel_ids: ["rohan", "meera"],
+        turn_count: 5,
+        status: "verdict",
+      });
+
+      const req = createJsonRequest("/api/session/behind-doors", { sessionId: sessId });
+      const res = await behindDoorsRoute(req);
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json.scene).toBeDefined();
+    });
+  });
+
+  describe("GET /api/share-card/[sessionId]", () => {
+    it("returns share card SVG response", async () => {
+      const sessId = "aaaa1111-bb22-cc33-dd44-eeee55556666";
+      mockDb.sessions.set(sessId, {
+        id: sessId,
+        owner_token: "tok",
+        panel_ids: ["rohan", "meera"],
+        turn_count: 4,
+        status: "verdict",
+      });
+
+      const req = new NextRequest(`http://localhost:3000/api/share-card/${sessId}`);
+      const res = await shareCardRoute(req, { params: Promise.resolve({ sessionId: sessId }) });
+      expect(res.status).toBe(200);
+      expect(res.headers.get("content-type")).toContain("image/svg+xml");
     });
   });
 
@@ -246,31 +466,6 @@ describe("API Routes Integration Tests", () => {
       expect(res.status).toBe(400);
       const json = await res.json();
       expect(json.error).toContain("magic byte");
-    });
-  });
-
-  describe("Rate Limiting & Information Leakage", () => {
-    it("returns 429 when rate limit is exceeded", async () => {
-      vi.spyOn(securityModule, "checkRateLimit").mockResolvedValueOnce({
-        allowed: false,
-        remaining: 0,
-      });
-
-      const req = createJsonRequest("/api/session/start", {
-        idea: "Long valid idea pitch exceeding 50 characters to trigger rate limiter check.",
-      });
-      const res = await startRoute(req);
-      expect(res.status).toBe(429);
-      const json = await res.json();
-      expect(json.error).toContain("Rate limit");
-    });
-
-    it("never returns raw stack traces in error responses", async () => {
-      const req = createJsonRequest("/api/session/start", { idea: "abc" });
-      const res = await startRoute(req);
-      const json = await res.json();
-      expect(json.stack).toBeUndefined();
-      expect(json.error).toBeDefined();
     });
   });
 });

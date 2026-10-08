@@ -16,7 +16,7 @@ vi.mock("openai", () => {
   };
 });
 
-import { createChatCompletion, GroqApiError } from "@/lib/llm/groq";
+import { createChatCompletion } from "@/lib/llm/groq";
 
 describe("JSON Fallback Parser & LLM Client Edge Cases", () => {
   describe("parseLlmJson Robustness", () => {

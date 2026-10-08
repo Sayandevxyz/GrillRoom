@@ -1,4 +1,5 @@
 import { query } from "../db";
+import { logger } from "../logger";
 
 export interface KnowledgeSnippet {
   id: number;
@@ -36,7 +37,7 @@ export async function getRubricSnippets(
       return rows.map((r) => r.text);
     }
   } catch (err) {
-    console.warn("[Rubric Retrieval Warning]", err);
+    logger.warn("Rubric retrieval failed, using fallback rubric", "getRubricSnippets", { err: String(err) });
   }
 
   // Graceful fallback: return general VC principle

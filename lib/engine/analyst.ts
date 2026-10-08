@@ -2,6 +2,7 @@ import { z } from "zod";
 import { createChatCompletion, DEFAULT_SMALL_MODEL } from "../llm/groq";
 import { parseLlmJson } from "../llm/json";
 import { buildAnalystPrompt, ClaimSnippet } from "../llm/prompts";
+import { logger } from "../logger";
 
 export const AnalystOutputSchema = z.object({
   scores: z.object({
@@ -91,19 +92,19 @@ export async function evaluateAnswer(
 
     const parsedJson = parseLlmJson(rawResponse);
     if (!parsedJson) {
-      console.warn("[Analyst Parse Warning] Failed to parse JSON from analyst response:", rawResponse);
+      logger.warn("Failed to parse JSON from analyst response", "evaluateFounderAnswer", { rawResponse });
       return DEFAULT_ANALYST_OUTPUT;
     }
 
     const validated = AnalystOutputSchema.safeParse(parsedJson);
     if (!validated.success) {
-      console.warn("[Analyst Zod Warning] Analyst output schema validation failed:", validated.error);
+      logger.warn("Analyst output schema validation failed", "evaluateFounderAnswer", { error: validated.error });
       return DEFAULT_ANALYST_OUTPUT;
     }
 
     return validated.data;
   } catch (err) {
-    console.warn("[Analyst Execution Warning] LLM call failed; using fallback analyst output:", err);
+    logger.warn("LLM call failed; using fallback analyst output", "evaluateFounderAnswer", { err: String(err) });
     return DEFAULT_ANALYST_OUTPUT;
   }
 }

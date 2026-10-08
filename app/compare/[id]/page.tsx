@@ -5,9 +5,10 @@ import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
-import { Chip } from "@/components/ui/Chip";
 import { ArrowRight, Printer } from "lucide-react";
 import { PitchRadar } from "@/components/features/radar/PitchRadar";
+import { ComparisonTable } from "@/components/compare/ComparisonTable";
+import { CriteriaProgressionGrid } from "@/components/compare/CriteriaProgressionGrid";
 
 interface CompareData {
   originalSessionId: string;
@@ -28,17 +29,7 @@ interface CompareData {
   overallDelta: number;
 }
 
-const INVESTOR_PROFILES: Record<
-  string,
-  { name: string; title: string; initials: string }
-> = {
-  rohan: { name: "Rohan Mehta", title: "Unit Economics Partner", initials: "RM" },
-  meera: { name: "Meera Shah", title: "Market and GTM Investor", initials: "MS" },
-  arjun: { name: "Dr. Arjun Rao", title: "Product and Technical Moat", initials: "AR" },
-  kavya: { name: "Kavya Sen", title: "Customer Proof Analyst", initials: "KS" },
-  sam: { name: "Sam Kapoor", title: "Founder and Deal Terms Partner", initials: "SK" },
-};
-
+/** Comparative audit report displaying partner conviction shifts between pitch iterations. */
 export default function CompareReportPage() {
   const params = useParams();
   const sessionId = params.id as string;
@@ -201,93 +192,16 @@ export default function CompareReportPage() {
           <PitchRadar sessionId={data.retrySessionId || sessionId} className="no-print" />
 
           {/* Side-by-Side Conviction Table */}
-          <section className="space-y-3">
-            <h3 className="text-base font-serif font-bold text-navy">
-              Partner Conviction Shift
-            </h3>
-
-            <div className="overflow-x-auto border border-border rounded-panel">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-surface-2 border-b border-border text-text-2 uppercase text-[10px] tracking-wider">
-                    <th className="p-3.5 font-bold">Investor</th>
-                    <th className="p-3.5 font-bold">Initial Conviction</th>
-                    <th className="p-3.5 font-bold">Revised Conviction</th>
-                    <th className="p-3.5 font-bold">Delta Shift</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {Object.keys(data.convictions.original || {}).map((key) => {
-                    const prof = INVESTOR_PROFILES[key] || {
-                      name: key,
-                      title: "Partner",
-                    };
-                    const orig = data.convictions.original[key] ?? 50;
-                    const ret = data.convictions.retry?.[key] ?? orig;
-                    const diff = ret - orig;
-
-                    return (
-                      <tr key={key} className="hover:bg-slate-50/60 transition-subtle">
-                        <td className="p-3.5 font-bold text-navy">
-                          {prof.name}
-                          <span className="block text-[11px] font-normal text-text-2">
-                            {prof.title}
-                          </span>
-                        </td>
-                        <td className="p-3.5 font-sans tabular-nums text-text-2 font-medium">
-                          {orig}%
-                        </td>
-                        <td className="p-3.5 font-sans tabular-nums font-bold text-navy">
-                          {ret}%
-                        </td>
-                        <td className="p-3.5">
-                          <Chip
-                            variant={diff > 0 ? "verified" : diff < 0 ? "danger" : "neutral"}
-                            size="sm"
-                            label={diff > 0 ? `+${diff}%` : diff < 0 ? `${diff}%` : "0%"}
-                          />
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </section>
+          <ComparisonTable
+            originalConvictions={data.convictions.original}
+            retryConvictions={data.convictions.retry}
+          />
 
           {/* Diligence Criteria Progression */}
-          <section className="space-y-3">
-            <h3 className="text-base font-serif font-bold text-navy">
-              Diligence Criteria Progression
-            </h3>
-
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-              {Object.entries(data.criteriaScores.original || {}).map(([key, origScore]) => {
-                const retryScore = data.criteriaScores.retry?.[key] ?? origScore;
-                const delta = retryScore - origScore;
-
-                return (
-                  <div key={key} className="p-3 rounded-field border border-border bg-surface-2/40 text-center space-y-1">
-                    <span className="text-[10px] uppercase font-bold text-text-2 block truncate">
-                      {key}
-                    </span>
-                    <div className="flex items-center justify-center gap-1.5 font-sans tabular-nums font-bold">
-                      <span className="text-text-2 text-xs">{origScore}</span>
-                      <ArrowRight className="w-3 h-3 text-slate-400" />
-                      <span className="text-navy text-sm">{retryScore}</span>
-                    </div>
-                    <span
-                      className={`text-[10px] font-bold block ${
-                        delta > 0 ? "text-success" : delta < 0 ? "text-danger" : "text-text-2"
-                      }`}
-                    >
-                      {delta > 0 ? `+${delta}` : `${delta}`}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
+          <CriteriaProgressionGrid
+            originalScores={data.criteriaScores.original}
+            retryScores={data.criteriaScores.retry}
+          />
 
           {/* Legal Footer */}
           <footer className="border-t border-border pt-4 text-center text-xs text-text-2">

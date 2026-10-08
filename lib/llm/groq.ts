@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { logger } from "../logger";
 
 export interface LlmCallOptions {
   model?: string;
@@ -86,8 +87,9 @@ export async function createChatCompletion(
         const status = errorObj?.status || errorObj?.statusCode;
         const errorMsg = sanitizeLogMessage(errorObj?.message || "Unknown error");
 
-        console.warn(
-          `[Groq API Call Warning] Model: ${candidateModel}, Attempt: ${attempt + 1}, Status: ${status}: ${errorMsg}`
+        logger.warn(
+          `Groq API call warning: Model ${candidateModel}, Attempt ${attempt + 1}, Status ${status}: ${errorMsg}`,
+          "createChatCompletion"
         );
 
         // Retry on 429 (rate limit) or 5xx server errors
@@ -136,8 +138,9 @@ export async function createStreamingChatCompletion(
       return await client.chat.completions.create(payload);
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : "";
-      console.warn(
-        `[Groq Stream Warning] Falling back from model ${candidateModel}: ${sanitizeLogMessage(errorMsg)}`
+      logger.warn(
+        `Groq stream fallback from model ${candidateModel}: ${sanitizeLogMessage(errorMsg)}`,
+        "createStreamingChatCompletion"
       );
       // Try next model in fallback list
     }

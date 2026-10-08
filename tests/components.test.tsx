@@ -11,6 +11,8 @@ import { Meter } from "@/components/ui/Meter";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { Dialog } from "@/components/ui/Dialog";
+import { Alert } from "@/components/ui/Alert";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { DueDiligenceLedger } from "@/components/DueDiligenceLedger";
 import { getReaction } from "@/lib/features/reactions/getReaction";
 
@@ -196,4 +198,67 @@ describe("UI Components Accessibility and Behavior Suite", () => {
       expect(handleClose).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe("Alert Component", () => {
+    it("renders all four variants with proper role='alert'", () => {
+      const { rerender } = render(<Alert variant="danger" title="System Error" message="Database connection timed out" />);
+      expect(screen.getByRole("alert")).toBeInTheDocument();
+      expect(screen.getByText("System Error")).toBeInTheDocument();
+      expect(screen.getByText("Database connection timed out")).toBeInTheDocument();
+
+      rerender(<Alert variant="warning" message="Warning banner message" />);
+      expect(screen.getByText("Warning banner message")).toBeInTheDocument();
+
+      rerender(<Alert variant="info" message="Informational guidance" />);
+      expect(screen.getByText("Informational guidance")).toBeInTheDocument();
+
+      rerender(<Alert variant="success" message="Action completed successfully" />);
+      expect(screen.getByText("Action completed successfully")).toBeInTheDocument();
+    });
+
+    it("triggers onRetry callback when retry button is clicked", () => {
+      const handleRetry = vi.fn();
+      render(<Alert variant="danger" message="Failed to fetch" onRetry={handleRetry} />);
+      const retryBtn = screen.getByRole("button", { name: /retry/i });
+      fireEvent.click(retryBtn);
+      expect(handleRetry).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("Skeleton Component", () => {
+    it("renders text, circular, and rectangular variants with aria-hidden='true'", () => {
+      const { rerender } = render(<Skeleton variant="rectangular" width={200} height={40} data-testid="skel" />);
+      let el = screen.getByTestId("skel");
+      expect(el).toHaveAttribute("aria-hidden", "true");
+      expect(el).toHaveClass("rounded-field");
+
+      rerender(<Skeleton variant="circular" data-testid="skel" />);
+      el = screen.getByTestId("skel");
+      expect(el).toHaveClass("rounded-full");
+
+      rerender(<Skeleton variant="text" data-testid="skel" />);
+      el = screen.getByTestId("skel");
+      expect(el).toHaveClass("h-4");
+    });
+  });
+
+  describe("Header Component", () => {
+    it("renders logo mark and branding", async () => {
+      const { Header } = await import("@/components/Header");
+      render(<Header />);
+      expect(screen.getByRole("img", { name: /grillroom flame/i })).toBeInTheDocument();
+      expect(screen.getByText("Grill")).toBeInTheDocument();
+      expect(screen.getByText("Room")).toBeInTheDocument();
+    });
+
+    it("triggers onHowItWorksClick callback when provided", async () => {
+      const { Header } = await import("@/components/Header");
+      const handleClick = vi.fn();
+      render(<Header onHowItWorksClick={handleClick} />);
+      const btn = screen.getByRole("button", { name: /how it works/i });
+      fireEvent.click(btn);
+      expect(handleClick).toHaveBeenCalledTimes(1);
+    });
+  });
 });
+

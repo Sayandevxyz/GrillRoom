@@ -1,6 +1,7 @@
 import { query, mockDb, isNeonConfigured } from "../db";
 import { ClaimSnippet } from "../llm/prompts";
 import { AnalystOutput } from "./analyst";
+import { logger } from "../logger";
 
 export interface ClaimRecord {
   id: number;
@@ -25,7 +26,7 @@ export async function getSessionClaims(sessionId: string): Promise<ClaimRecord[]
       );
       return rows;
     } catch (err) {
-      console.warn("[Ledger Fetch Warning]", err);
+      logger.warn("Failed to fetch claims from Neon DB, falling back to mock", "getSessionClaims", { err: String(err) });
     }
   }
 

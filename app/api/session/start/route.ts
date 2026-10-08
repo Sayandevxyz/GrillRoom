@@ -7,6 +7,7 @@ import { addClaim, getSessionClaims } from "@/lib/engine/ledger";
 import { recordTurn, recordConviction } from "@/lib/engine/session";
 import { checkRateLimit, logServerError } from "@/lib/security";
 import { evaluateAnswer } from "@/lib/engine/analyst";
+import { logger } from "@/lib/logger";
 
 const StartSessionSchema = z.object({
   idea: z.string().min(50, "Idea must be at least 50 characters").max(6000),
@@ -87,7 +88,7 @@ export async function POST(req: NextRequest) {
         await addClaim(sessionId, `The team seeks ${ask} in funding`, "ask", 3, 0);
       }
     } catch (err) {
-      console.warn("[Pitch Claim Extraction Warning]", err);
+      logger.warn("Initial pitch claim extraction failed, using fallback claim", "startRoute", { err: String(err) });
       await addClaim(sessionId, "Core pitch premise", "problem", 3, 0);
     }
 

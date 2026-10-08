@@ -1,4 +1,5 @@
 import { neon } from "@neondatabase/serverless";
+import { logger } from "./logger";
 
 // In-memory fallback storage if DATABASE_URL is not set (for offline dev/tests)
 interface MockDB {
@@ -60,7 +61,7 @@ export async function query<T = Record<string, unknown>>(
       const result = await sql(sqlText, params as (string | number | boolean | null)[]);
       return (result as unknown as T[]) || [];
     } catch (err) {
-      console.error("[Database Query Error]", err);
+      logger.error("Database query failed", "query", err);
       throw err;
     }
   }

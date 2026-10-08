@@ -6,6 +6,7 @@ import { BehindDoorsSceneData, BehindDoorsDialogueTurn } from "@/lib/features/be
 import { INVESTOR_PERSONAS } from "@/lib/engine/personas";
 import { Button } from "@/components/ui/Button";
 import { Volume2, Play, Eye, Quote, ShieldAlert } from "lucide-react";
+import { logger } from "@/lib/logger";
 
 export interface BehindDoorsSceneProps {
   sessionId: string;
@@ -73,7 +74,7 @@ export const BehindDoorsScene: React.FC<BehindDoorsSceneProps> = ({
         setRevealedCount(json.dialogue.length);
       })
       .catch((err) => {
-        console.warn("[BehindDoorsScene]", err);
+        logger.warn("Failed to load behind doors scene data", "BehindDoorsScene", { err: String(err) });
       })
       .finally(() => {
         setLoading(false);
@@ -197,11 +198,12 @@ export const BehindDoorsScene: React.FC<BehindDoorsSceneProps> = ({
       <div className="space-y-4">
         {data.dialogue.slice(0, revealedCount).map((turn: BehindDoorsDialogueTurn, idx: number) => {
           const persona = INVESTOR_PERSONAS[turn.speaker] || {
-            name: turn.speaker_name,
+            name: turn.speaker_name || "Partner",
             archetype: "Venture Partner",
             avatarColor: "#D4572B",
           };
           const toneStyle = TONE_STYLES[turn.tone] || TONE_STYLES.analytical;
+          const speakerName = turn.speaker_name || persona.name || "Partner";
 
           return (
             <div
@@ -212,9 +214,9 @@ export const BehindDoorsScene: React.FC<BehindDoorsSceneProps> = ({
               <div
                 className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-xs text-white shadow-md border border-white/20"
                 style={{ backgroundColor: persona.avatarColor }}
-                title={`${turn.speaker_name} (${persona.archetype})`}
+                title={`${speakerName} (${persona.archetype})`}
               >
-                {turn.speaker_name.slice(0, 1)}
+                {speakerName.slice(0, 1)}
               </div>
 
               {/* Message Bubble */}
@@ -222,7 +224,7 @@ export const BehindDoorsScene: React.FC<BehindDoorsSceneProps> = ({
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-white">
-                      {turn.speaker_name}
+                      {speakerName}
                     </span>
                     <span className="text-[11px] text-slate-400 hidden sm:inline">
                       • {persona.archetype}

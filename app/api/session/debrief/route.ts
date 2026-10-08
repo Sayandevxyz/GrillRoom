@@ -7,6 +7,7 @@ import { createChatCompletion, DEFAULT_BIG_MODEL } from "@/lib/llm/groq";
 import { parseLlmJson } from "@/lib/llm/json";
 import { buildDebriefPrompt } from "@/lib/llm/prompts";
 import { checkRateLimit, logServerError } from "@/lib/security";
+import { logger } from "@/lib/logger";
 
 const DebriefSchema = z.object({
   sessionId: z.string().uuid(),
@@ -126,7 +127,7 @@ export async function POST(req: NextRequest) {
 
       reportContent = parseLlmJson<Record<string, unknown>>(rawReport);
     } catch (err) {
-      console.warn("[Debrief LLM Error] Using structured fallback:", err);
+      logger.warn("Debrief LLM execution failed; using structured fallback", "debriefRoute", { err: String(err) });
     }
 
     // If parsing fails or LLM is offline, provide strict schema-compliant fallback with placeholders

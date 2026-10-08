@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import { query } from "./db";
+import { logger } from "./logger";
 
 /**
  * Sanitizes untrusted founder input:
@@ -65,19 +66,17 @@ export async function checkRateLimit(
     return { allowed: true, remaining: Math.max(0, limitPerMin - currentCount) };
   } catch (err) {
     // Fail-open defensively so unexpected DB hiccups never block founders
-    console.warn("[Rate Limit Check Warning: failing open]", err);
+    logger.warn("Rate limit check query failed, failing open", "checkRateLimit", { err: String(err) });
     return { allowed: true, remaining: limitPerMin };
   }
 }
 
 /**
  * Generates a short random error reference ID and logs the full internal error
- * and stack trace safely to the server console only.
+ * safely using structured logger.
  */
 export function logServerError(err: unknown, context: string): string {
   const errorId = "err_" + crypto.randomUUID().slice(0, 8);
-  const message = err instanceof Error ? err.message : String(err);
-  const stack = err instanceof Error ? err.stack : "";
-  console.error(`[${context}] [${errorId}]`, message, stack ? `\n${stack}` : "");
+  logger.error(err instanceof Error ? err.message : String(err), context, err, { errorId });
   return errorId;
 }

@@ -7,6 +7,7 @@ import { createChatCompletion, DEFAULT_BIG_MODEL } from "@/lib/llm/groq";
 import { parseLlmJson } from "@/lib/llm/json";
 import { checkRateLimit, logServerError } from "@/lib/security";
 import { FEATURE_BEHIND_DOORS } from "@/lib/features/flags";
+import { logger } from "@/lib/logger";
 
 const BehindDoorsSchema = z.object({
   sessionId: z.string().uuid(),
@@ -162,7 +163,7 @@ Write a 6 to 8 turn confidential partner deliberation dialogue now. Return stric
 
       sceneContent = parseLlmJson<BehindDoorsSceneData>(rawLlm);
     } catch (err) {
-      console.warn("[Behind Closed Doors LLM Error] Using structured fallback:", err);
+      logger.warn("Behind closed doors LLM execution failed; using structured fallback", "behindDoorsRoute", { err: String(err) });
     }
 
     const sceneData = normalizeBehindDoorsScene(sceneContent);

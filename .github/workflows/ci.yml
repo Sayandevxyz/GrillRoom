@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Lint, Typecheck, Test & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Run Test Suite & Coverage
+        run: npm run test:coverage
+
+      - name: Build Next.js Application
+        run: npm run build
+        env:
+          GROQ_API_KEY: ci_dummy_key_not_for_production
+          DATABASE_URL: postgresql://ci:dummy@localhost:5432/neondb
+          GROQ_BIG_MODEL: openai/gpt-oss-120b
+          GROQ_SMALL_MODEL: openai/gpt-oss-20b
+          MAX_TURNS: 14
+          RATE_LIMIT_PER_MIN: 30

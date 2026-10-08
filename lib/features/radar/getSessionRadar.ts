@@ -1,4 +1,5 @@
 import { query, isNeonConfigured, mockDb } from "@/lib/db";
+import { logger } from "@/lib/logger";
 
 export interface RadarScores {
   directness: number;
@@ -149,7 +150,7 @@ export async function getSessionRadar(sessionId: string): Promise<SessionRadarDa
       parentSessionId,
     };
   } catch (err) {
-    console.warn("[getSessionRadar Error]", err);
+    logger.warn("Failed to retrieve session radar data", "getSessionRadar", { err: String(err) });
     return null;
   }
 }

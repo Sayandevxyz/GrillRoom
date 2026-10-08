@@ -42,8 +42,6 @@ async function testCoreLoop() {
     "The core defensibility is our proprietary AST static analysis parser which operates with zero hallucination on Rust and Go microservices.",
   ];
 
-  let currentClaimsCount = startData.initialClaims.length;
-
   for (let i = 0; i < answers.length; i++) {
     console.log(`\n💬 Submitting Turn ${i + 1}...`);
     console.log(`   Founder: "${answers[i]}"`);

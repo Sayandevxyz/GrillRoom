@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { FEATURE_RADAR } from "@/lib/features/flags";
 import { RadarScores } from "@/lib/features/radar/getSessionRadar";
+import { logger } from "@/lib/logger";
 
 export interface PitchRadarProps {
   current?: RadarScores;
@@ -54,7 +55,7 @@ export const PitchRadar: React.FC<PitchRadarProps> = ({
             setPrevious(data.radar.previous);
           }
         })
-        .catch((err) => console.warn("Failed to load radar data", err))
+        .catch((err) => logger.warn("Failed to load radar data", "PitchRadar", { err: String(err) }))
         .finally(() => setLoading(false));
     }
   }, [sessionId, propCurrent, propPrevious]);

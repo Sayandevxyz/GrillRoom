@@ -11,14 +11,13 @@ import {
   FileUp,
   FileCheck,
   Trash2,
-  Users,
-  FileText,
-  CheckCircle2,
-  Award,
   Check,
 } from "lucide-react";
-import { IntroGate } from "@/components/features/intro-gate/IntroGate";
-import { Dialog } from "@/components/ui/Dialog";
+import dynamic from "next/dynamic";
+import { PitchRulesSidebar } from "@/components/landing/PitchRulesSidebar";
+import { HowItWorksModal } from "@/components/landing/HowItWorksModal";
+
+const IntroGate = dynamic(() => import("@/components/features/intro-gate/IntroGate").then((mod) => mod.IntroGate), { ssr: false });
 
 export default function SetupPage() {
   const router = useRouter();
@@ -432,62 +431,7 @@ export default function SetupPage() {
           </div>
 
           {/* Right Column: "What you'll get" Panel (5 cols) */}
-          <div className="lg:col-span-5 flex flex-col">
-            <Card goldTopRule={true} className="p-6 md:p-8 flex-1 flex flex-col justify-between space-y-6">
-              <div className="space-y-5">
-                <div>
-                  <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-gold-dark block mb-1">
-                    Deliverables
-                  </span>
-                  <h2 className="text-xl font-serif font-bold text-navy">
-                    What you&apos;ll get
-                  </h2>
-                </div>
-
-                <ul className="space-y-3.5 text-xs text-text leading-relaxed">
-                  <li className="flex items-center gap-2.5">
-                    <Users className="w-4 h-4 text-cta flex-shrink-0" aria-hidden="true" />
-                    <span className="font-semibold text-navy">Live investor panel</span>
-                  </li>
-                  <li className="flex items-center gap-2.5">
-                    <FileText className="w-4 h-4 text-cta flex-shrink-0" aria-hidden="true" />
-                    <span className="font-semibold text-navy">Claim-by-claim ledger</span>
-                  </li>
-                  <li className="flex items-center gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-cta flex-shrink-0" aria-hidden="true" />
-                    <span className="font-semibold text-navy">Verdict from each investor</span>
-                  </li>
-                  <li className="flex items-center gap-2.5">
-                    <Award className="w-4 h-4 text-cta flex-shrink-0" aria-hidden="true" />
-                    <span className="font-semibold text-navy">Rewrites + 7-day plan</span>
-                  </li>
-                </ul>
-
-                {/* Example static box */}
-                <div className="p-4 bg-surface-2/80 border border-border rounded-field space-y-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-text-2 block">
-                    Example
-                  </span>
-                  <div className="space-y-2 text-xs">
-                    <div className="flex items-center justify-between gap-2 p-2 bg-white rounded border border-border">
-                      <span className="font-medium text-navy text-xs truncate">40% of retailers need this</span>
-                      <span className="text-[11px] font-bold text-warning flex-shrink-0">→ Unsourced</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-2 p-2 bg-white rounded border border-border">
-                      <span className="font-medium text-navy text-xs truncate">Pilot was free</span>
-                      <span className="text-[11px] font-bold text-danger flex-shrink-0">→ Contradiction</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Confidentiality Footer Card */}
-              <div className="p-4 bg-white/70 border border-border rounded-panel text-xs text-text-2 space-y-1">
-                <span className="font-bold text-navy block">Confidential & Private</span>
-                <p>Your session is stored locally with session-scoped cookie tokens. Data is never shared or used for public training.</p>
-              </div>
-            </Card>
-          </div>
+          <PitchRulesSidebar />
         </div>
       </main>
 
@@ -497,44 +441,10 @@ export default function SetupPage() {
       </footer>
 
       {/* How It Works Explainer Modal */}
-      <Dialog
+      <HowItWorksModal
         isOpen={isHowItWorksOpen}
         onClose={() => setIsHowItWorksOpen(false)}
-        title="How GrillRoom Works"
-        description="A deterministic simulator preparing you for real venture capital conversations."
-      >
-        <div className="space-y-4 text-xs text-text leading-relaxed">
-          <div className="space-y-1">
-            <h4 className="font-bold text-navy text-sm">1. Submit Your Brief or Pitch Deck</h4>
-            <p className="text-text-2">
-              Provide your value proposition, customer traction, and capital ask (or upload your pitch deck PDF).
-            </p>
-          </div>
-          <div className="space-y-1">
-            <h4 className="font-bold text-navy text-sm">2. Enter the Boardroom</h4>
-            <p className="text-text-2">
-              Face five distinct venture archetypes (The Numbers Hawk, The Skeptic, The Visionary, The Customer Voice, and The Chair). They grill your assumptions in real time.
-            </p>
-          </div>
-          <div className="space-y-1">
-            <h4 className="font-bold text-navy text-sm">3. Due Diligence Ledger & Conviction</h4>
-            <p className="text-text-2">
-              Every statement is logged into an immutable ledger. Contradictions trigger instant investor interrupts and conviction drops.
-            </p>
-          </div>
-          <div className="space-y-1">
-            <h4 className="font-bold text-navy text-sm">4. Algorithmic Investor Debrief</h4>
-            <p className="text-text-2">
-              Receive simulated term sheets, line-by-line evidence rewrites, and a 7-day action sprint before real investor meetings.
-            </p>
-          </div>
-          <div className="pt-2 flex justify-end">
-            <Button variant="primary" size="sm" onClick={() => setIsHowItWorksOpen(false)}>
-              Got it, let&apos;s go
-            </Button>
-          </div>
-        </div>
-      </Dialog>
+      />
     </div>
   );
 }

@@ -18,6 +18,7 @@ import { getRubricSnippets } from "./rubrics";
 import { buildInvestorPrompt } from "../llm/prompts";
 import { createStreamingChatCompletion, DEFAULT_BIG_MODEL } from "../llm/groq";
 import type OpenAI from "openai";
+import { logger } from "../logger";
 
 export interface SessionRecord {
   id: string;
@@ -352,7 +353,7 @@ export async function executeInterrogationTurn(
       }
     );
   } catch (err) {
-    console.warn("[Investor Stream Warning] Fallback to direct completion:", err);
+    logger.warn("Investor stream failed; fallback to direct completion", "handleFounderAnswer", { err: String(err) });
     directSpeech = `${persona.signatureQuestion}`;
   }
 

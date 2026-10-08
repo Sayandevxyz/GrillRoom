@@ -5,6 +5,7 @@ import { FEATURE_SHARE_CARD } from "@/lib/features/flags";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { Share2, Download, Copy, Check } from "lucide-react";
+import { logger } from "@/lib/logger";
 
 export interface ShareCardButtonProps {
   sessionId: string;
@@ -34,7 +35,7 @@ export const ShareCardButton: React.FC<ShareCardButtonProps> = ({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.warn("Failed to copy caption", err);
+      logger.warn("Failed to copy caption", "ShareCardButton", { err: String(err) });
     }
   };
 
@@ -52,7 +53,7 @@ export const ShareCardButton: React.FC<ShareCardButtonProps> = ({
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (err) {
-      console.warn("Failed to download share card", err);
+      logger.warn("Failed to download share card", "ShareCardButton", { err: String(err) });
     } finally {
       setDownloading(false);
     }

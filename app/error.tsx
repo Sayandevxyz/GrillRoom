@@ -2,6 +2,7 @@
 
 import React, { useEffect } from "react";
 import Link from "next/link";
+import { logger } from "@/lib/logger";
 
 export default function ErrorBoundary({
   error,
@@ -11,7 +12,7 @@ export default function ErrorBoundary({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("[Application Error Boundary]", error);
+    logger.error("Application Error Boundary", "ErrorBoundary", error);
   }, [error]);
 
   return (

@@ -29,3 +29,42 @@ export const MAX_PDF_TEXT_CHARS = 15000;
 
 // Rate Limiting
 export const RATE_LIMIT_REQUESTS_PER_MINUTE = 30;
+
+/** Investor profile directory used across board sessions and debrief views. */
+export const INVESTOR_PROFILES: Record<
+  string,
+  { name: string; title: string; initials: string }
+> = {
+  rohan: {
+    name: "Rohan Mehta",
+    title: "Unit Economics Partner",
+    initials: "RM",
+  },
+  meera: {
+    name: "Meera Shah",
+    title: "Market and GTM Investor",
+    initials: "MS",
+  },
+  arjun: {
+    name: "Dr. Arjun Rao",
+    title: "Product and Technical Moat",
+    initials: "AR",
+  },
+  kavya: {
+    name: "Kavya Sen",
+    title: "Customer Proof Analyst",
+    initials: "KS",
+  },
+  sam: {
+    name: "Sam Kapoor",
+    title: "Founder and Deal Terms Partner",
+    initials: "SK",
+  },
+};
+
+/** Formatted display titles for session intensity modes. */
+export const INTENSITY_NAMES: Record<string, string> = {
+  friendly: "Angel Review",
+  tough: "Partner Meeting",
+  shark: "Shark Tank Mode",
+};
