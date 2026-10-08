@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { z } from "zod";
 import { wrapFounderText, sanitizeFounderText } from "@/lib/security";
+import { getMaxExchanges, DEFAULT_MAX_EXCHANGES } from "@/lib/constants";
 
 const StartSessionSchema = z.object({
   idea: z.string().min(50, "Idea must be at least 50 characters").max(6000),
@@ -102,6 +103,32 @@ describe("Input Validation & Zod Schema Constraints", () => {
       const sanitized = sanitizeFounderText(malicious);
       expect(sanitized).not.toContain("</founder_text>");
       expect(sanitized).toContain("&lt;/founder_text&gt;");
+    });
+  });
+
+  describe("Exchange Limits by Review Intensity", () => {
+    it("returns 5 exchanges for Angel Review (friendly)", () => {
+      expect(getMaxExchanges("friendly")).toBe(5);
+    });
+
+    it("returns 7 exchanges for Partner Meeting (tough)", () => {
+      expect(getMaxExchanges("tough")).toBe(7);
+    });
+
+    it("returns 12 exchanges for Shark Tank Mode (shark)", () => {
+      expect(getMaxExchanges("shark")).toBe(12);
+    });
+
+    it("returns default 14 exchanges when intensity is omitted or undefined", () => {
+      expect(getMaxExchanges()).toBe(14);
+      expect(getMaxExchanges(undefined)).toBe(14);
+      expect(getMaxExchanges(null)).toBe(14);
+      expect(DEFAULT_MAX_EXCHANGES).toBe(14);
+    });
+
+    it("returns default 14 exchanges for unrecognized intensity modes", () => {
+      expect(getMaxExchanges("custom_mode")).toBe(14);
+      expect(getMaxExchanges("extreme")).toBe(14);
     });
   });
 });

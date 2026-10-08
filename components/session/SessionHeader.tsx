@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Stepper, StepState } from "@/components/ui/Stepper";
 import { SlidersHorizontal } from "lucide-react";
-import { INTENSITY_NAMES } from "@/lib/constants";
+import { INTENSITY_NAMES, getMaxExchanges } from "@/lib/constants";
 import { IntensityMode } from "@/lib/types";
 
 interface SessionHeaderProps {
@@ -29,6 +29,8 @@ export function SessionHeader({
   canGenerateDebrief,
   onRequestDebrief,
 }: SessionHeaderProps) {
+  const maxExchanges = getMaxExchanges(intensity);
+
   return (
     <header className="bg-[#14284F] text-white border-t border-[#D4AF37]/30 border-b-2 border-[#D4572B] sticky top-0 z-30 shadow-[0_4px_16px_rgba(0,0,0,0.25)] h-20 min-h-[5rem] flex items-center">
       <div className="w-full max-w-6xl mx-auto px-6 flex items-center justify-between">
@@ -57,7 +59,7 @@ export function SessionHeader({
         <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4 shrink-0">
           <div className="text-right hidden sm:block">
             <span className="text-xs font-semibold tabular-nums text-slate-200 block">
-              Exchange {founderExchangeCount} of 14
+              Exchange {founderExchangeCount} of {maxExchanges}
             </span>
             <span className="text-[11px] text-slate-400 block">
               Investor Panel · {INTENSITY_NAMES[intensity] || intensity}
