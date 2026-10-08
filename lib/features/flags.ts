@@ -16,3 +16,8 @@ export const FEATURE_REACTIONS =
 export const FEATURE_RADAR =
   typeof process !== "undefined" &&
   process.env.NEXT_PUBLIC_FEATURE_RADAR === "true";
+
+export const FEATURE_SHARE_CARD =
+  typeof process !== "undefined" &&
+  process.env.NEXT_PUBLIC_FEATURE_SHARE_CARD === "true";
+

@@ -17,6 +17,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { PitchRadar } from "@/components/features/radar/PitchRadar";
+import { ShareCardButton } from "@/components/features/share-card/ShareCardButton";
 
 interface VerdictItem {
   investor_id: string;
@@ -224,6 +225,8 @@ export default function DebriefReportPage() {
             >
               Save as PDF
             </Button>
+
+            <ShareCardButton sessionId={sessionId} readinessScore={score} />
 
             <Button
               variant="primary"
