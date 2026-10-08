@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Header } from "@/components/Header";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Chip } from "@/components/ui/Chip";
 import { Alert } from "@/components/ui/Alert";
 import { IntensityMode } from "@/lib/types";
 import {
@@ -133,27 +132,51 @@ export default function SetupPage() {
       {/* Top Authority Header */}
       <Header onHowItWorksClick={() => setIsHowItWorksOpen(true)} />
 
-      <main id="main-content" className="flex-1 max-w-setup mx-auto w-full px-6 py-10 md:py-14">
+      <main id="main-content" className="flex-1 max-w-6xl mx-auto w-full px-6 py-8 md:py-12">
         {/* Hero Section */}
-        <div className="text-center max-w-2xl mx-auto space-y-3 mb-10 md:mb-12">
+        <div className="text-center max-w-3xl mx-auto space-y-4 mb-8 md:mb-10">
           <div>
             <span className="inline-block px-3 py-1 text-[11px] font-bold tracking-wider uppercase text-gold-dark bg-amber-50/70 border border-amber-200/80 rounded-full">
-              AI Investor Readiness Simulator
+              AI INVESTOR PANEL · PITCH PRACTICE
             </span>
           </div>
-          <h1 className="text-3xl md:text-5xl font-serif font-bold text-navy tracking-tight leading-[1.15]">
-            Get Your Startup Pitch Investor-Ready.
+          <h1 className="text-3xl md:text-5xl font-serif font-bold tracking-tight leading-[1.15]">
+            <span className="text-navy">Friends say it&apos;s great. </span>
+            <span className="text-cta">Investors won&apos;t.</span>
           </h1>
-          <p className="text-text-2 text-sm md:text-base leading-relaxed">
-            Face an AI investor panel that challenges your numbers, flags weak claims, and prepares you for real fundraising conversations.
+          <p className="text-text-2 text-sm md:text-base leading-relaxed max-w-2xl mx-auto">
+            Pitch your idea. Five AI investors question every claim, catch your contradictions, and show you exactly what to fix.
           </p>
+
+          {/* Investor Avatars Row */}
+          <div className="pt-2 flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
+            {[
+              { name: "Rohan", role: "Numbers", initials: "RM" },
+              { name: "Meera", role: "Market", initials: "MS" },
+              { name: "Arjun", role: "Tech", initials: "AR" },
+              { name: "Kavya", role: "Users", initials: "KS" },
+              { name: "Sam", role: "Team", initials: "SK" },
+            ].map((inv) => (
+              <div
+                key={inv.name}
+                className="flex items-center gap-2 bg-white/80 border border-border px-3 py-1.5 rounded-full shadow-subtle"
+              >
+                <div className="w-6 h-6 rounded-full bg-navy text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-cta/30">
+                  {inv.initials}
+                </div>
+                <span className="text-xs font-semibold text-navy">
+                  {inv.name} <span className="text-text-2 font-normal text-[11px]">· {inv.role}</span>
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Two-Column Setup Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
           {/* Left Column: Form Card (7 cols) */}
-          <div className="lg:col-span-7">
-            <Card className="p-6 md:p-8">
+          <div className="lg:col-span-7 flex flex-col">
+            <Card goldTopRule={true} className="p-6 md:p-8 flex-1 flex flex-col justify-between">
               <form onSubmit={handleStartReview} className="space-y-8">
                 {errorMsg && (
                   <Alert
@@ -185,10 +208,10 @@ export default function SetupPage() {
 
                   <textarea
                     id="pitch-input"
-                    rows={6}
+                    rows={5}
                     value={idea}
                     onChange={(e) => setIdea(e.target.value)}
-                    placeholder="Describe your startup: What urgent problem do you solve? Who is the customer? What is your pricing and traction? (e.g. We built an automated compliance engine for fintech lenders. We charge $3,000/mo and have 8 signed pilot customers with a $400 CAC...)"
+                    placeholder="Describe your startup: What urgent problem do you solve? Who is the customer? What is your pricing and traction? (e.g. ₹3,000/month, 8 signed pilot customers, ₹400 CAC...)"
                     className="w-full bg-white border border-border focus:border-navy rounded-field p-3.5 text-text placeholder:text-slate-400 focus:outline-none transition-subtle text-sm leading-relaxed resize-y"
                     required
                   />
@@ -387,89 +410,83 @@ export default function SetupPage() {
                     size="lg"
                     isLoading={isSubmitting}
                     disabled={!isPitchValid}
-                    className="w-full"
+                    className="w-full bg-cta hover:bg-cta-hover focus-visible:ring-gold text-white font-semibold py-3.5 shadow-subtle text-base"
                   >
-                    {isSubmitting ? "Convening the panel..." : "Start Investor Review"}
+                    {isSubmitting ? "Convening the panel..." : "Start the Grilling →"}
                   </Button>
 
-                  {!isPitchValid && (
-                    <p className="text-xs text-text-2 text-center">
-                      {idea.trim().length === 0
+                  <p className="text-xs text-text-2 text-center">
+                    {!isPitchValid ? (
+                      idea.trim().length === 0
                         ? "Add at least 50 characters to begin."
                         : idea.trim().length < 50
                         ? `Add ${50 - idea.trim().length} more characters to begin.`
-                        : "Pitch length exceeds the 6,000 character limit."}
-                    </p>
-                  )}
+                        : "Pitch length exceeds the 6,000 character limit."
+                    ) : (
+                      "Practice tool. Verdicts are simulated, not predictions of real investor decisions."
+                    )}
+                  </p>
                 </div>
               </form>
             </Card>
           </div>
 
-          {/* Right Column: Sticky "What You Will Get" Panel (5 cols) */}
-          <div className="lg:col-span-5 lg:sticky lg:top-8 space-y-4">
-            <Card goldTopRule={true} className="p-6 md:p-7 space-y-5">
-              <div>
-                <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-gold-dark block mb-1">
-                  Deliverables
-                </span>
-                <h2 className="text-lg font-serif font-bold text-navy">
-                  What you will get
-                </h2>
-              </div>
+          {/* Right Column: "What you'll get" Panel (5 cols) */}
+          <div className="lg:col-span-5 flex flex-col">
+            <Card goldTopRule={true} className="p-6 md:p-8 flex-1 flex flex-col justify-between space-y-6">
+              <div className="space-y-5">
+                <div>
+                  <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-gold-dark block mb-1">
+                    Deliverables
+                  </span>
+                  <h2 className="text-xl font-serif font-bold text-navy">
+                    What you&apos;ll get
+                  </h2>
+                </div>
 
-              <ul className="space-y-3.5 text-xs text-text leading-relaxed">
-                <li className="flex items-start gap-2.5">
-                  <Users className="w-4 h-4 text-navy flex-shrink-0 mt-0.5" aria-hidden="true" />
-                  <span>
-                    <strong>A live five-investor panel</strong> with distinct diligence lenses and real-time conviction calibration.
-                  </span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <FileText className="w-4 h-4 text-navy flex-shrink-0 mt-0.5" aria-hidden="true" />
-                  <span>
-                    <strong>A Due Diligence Ledger</strong> that extracts every claim, flags contradictions, and records evidence gaps.
-                  </span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-navy flex-shrink-0 mt-0.5" aria-hidden="true" />
-                  <span>
-                    <strong>Algorithmic verdicts</strong> computed strictly in code from conviction thresholds with simulated terms.
-                  </span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <Award className="w-4 h-4 text-navy flex-shrink-0 mt-0.5" aria-hidden="true" />
-                  <span>
-                    <strong>An Investor Readiness Report</strong> featuring evidence-only rewrites, top risks, and a 7-day action sprint.
-                  </span>
-                </li>
-              </ul>
+                <ul className="space-y-3.5 text-xs text-text leading-relaxed">
+                  <li className="flex items-center gap-2.5">
+                    <Users className="w-4 h-4 text-cta flex-shrink-0" aria-hidden="true" />
+                    <span className="font-semibold text-navy">Live investor panel</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <FileText className="w-4 h-4 text-cta flex-shrink-0" aria-hidden="true" />
+                    <span className="font-semibold text-navy">Claim-by-claim ledger</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <CheckCircle2 className="w-4 h-4 text-cta flex-shrink-0" aria-hidden="true" />
+                    <span className="font-semibold text-navy">Verdict from each investor</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <Award className="w-4 h-4 text-cta flex-shrink-0" aria-hidden="true" />
+                    <span className="font-semibold text-navy">Rewrites + 7-day plan</span>
+                  </li>
+                </ul>
 
-              {/* Static Preview of Due Diligence Ledger Row */}
-              <div className="pt-2 border-t border-border space-y-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-text-2 block">
-                  Due Diligence Ledger Preview
-                </span>
-                <div className="p-3 bg-surface-2/70 border border-border rounded-field space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-mono font-bold text-navy">DD-01</span>
-                    <Chip variant="verified" size="sm" label="Verified" />
+                {/* Example static box */}
+                <div className="p-4 bg-surface-2/80 border border-border rounded-field space-y-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-text-2 block">
+                    Example
+                  </span>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex items-center justify-between gap-2 p-2 bg-white rounded border border-border">
+                      <span className="font-medium text-navy text-xs truncate">40% of retailers need this</span>
+                      <span className="text-[11px] font-bold text-warning flex-shrink-0">→ Unsourced</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 p-2 bg-white rounded border border-border">
+                      <span className="font-medium text-navy text-xs truncate">Pilot was free</span>
+                      <span className="text-[11px] font-bold text-danger flex-shrink-0">→ Contradiction</span>
+                    </div>
                   </div>
-                  <p className="text-xs font-semibold text-navy">
-                    Customer acquisition payback under 6 months
-                  </p>
-                  <p className="text-[11px] text-text-2">
-                    Category: Unit economics • Supported by stated cohorts
-                  </p>
                 </div>
               </div>
-            </Card>
 
-            {/* Quick Context Card */}
-            <div className="p-4 bg-white/70 border border-border rounded-panel text-xs text-text-2 space-y-1">
-              <span className="font-bold text-navy block">Confidential & Private</span>
-              <p>Your session is stored locally with session-scoped cookie tokens. Data is never shared or used for public training.</p>
-            </div>
+              {/* Confidentiality Footer Card */}
+              <div className="p-4 bg-white/70 border border-border rounded-panel text-xs text-text-2 space-y-1">
+                <span className="font-bold text-navy block">Confidential & Private</span>
+                <p>Your session is stored locally with session-scoped cookie tokens. Data is never shared or used for public training.</p>
+              </div>
+            </Card>
           </div>
         </div>
       </main>

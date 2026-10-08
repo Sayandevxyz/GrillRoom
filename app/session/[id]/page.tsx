@@ -6,7 +6,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Meter } from "@/components/ui/Meter";
 import { Stepper, StepState } from "@/components/ui/Stepper";
 import { Dialog } from "@/components/ui/Dialog";
 import { DueDiligenceLedger, LedgerClaimItem } from "@/components/DueDiligenceLedger";
@@ -17,7 +16,9 @@ import {
   SlidersHorizontal,
   X,
   FileCheck2,
+  ChevronDown,
 } from "lucide-react";
+import { ReactionBadge } from "@/components/features/reactions/ReactionBadge";
 
 interface Turn {
   id?: number;
@@ -51,6 +52,7 @@ interface StartSessionResponse {
   session?: {
     turn_count?: number;
     intensity?: IntensityMode;
+    idea_text?: string;
   };
   turns?: Array<{
     role: TurnRole;
@@ -113,6 +115,8 @@ export default function SessionStagePage() {
   const [turnCount, setTurnCount] = useState(0);
   const [intensity, setIntensity] = useState<IntensityMode>("tough");
   const [activeSpeaker, setActiveSpeaker] = useState<string | null>(null);
+  const [pitchText, setPitchText] = useState("");
+  const [isPitchCollapsed, setIsPitchCollapsed] = useState(true);
 
   // Streaming and user input states
   const [answerInput, setAnswerInput] = useState("");
@@ -158,6 +162,9 @@ export default function SessionStagePage() {
           if (data.session) {
             setTurnCount(data.session.turn_count || 0);
             setIntensity(data.session.intensity || "tough");
+            if (data.session.idea_text) {
+              setPitchText(data.session.idea_text);
+            }
           }
         }
       } catch (err: unknown) {
@@ -323,43 +330,50 @@ export default function SessionStagePage() {
     return map[type.toLowerCase()] || type.replace(/_/g, " ");
   };
 
+  const founderExchangeCount = turns.filter((t) => t.role === "founder").length;
+  const canGenerateDebrief = founderExchangeCount >= 3;
+
   return (
     <div className="min-h-screen flex flex-col justify-between">
-      {/* 1. Top Bar */}
-      <header className="bg-navy text-white px-6 py-3.5 border-b border-slate-800 sticky top-0 z-30 shadow-md">
-        <div className="max-w-page mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center" aria-label="GrillRoom Home">
-              <Image
-                src="/brand/grillroom-logo.png"
-                alt="GrillRoom"
-                width={120}
-                height={30}
-                priority
-                className="h-7 w-auto object-contain"
-              />
+      {/* 1. Shared Authority Top Bar */}
+      <header className="bg-[#14284F] text-white border-t border-[#D4AF37]/30 border-b-2 border-[#D4572B] sticky top-0 z-30 shadow-[0_4px_16px_rgba(0,0,0,0.25)] h-20 min-h-[5rem] flex items-center">
+        <div className="w-full max-w-6xl mx-auto px-6 flex items-center justify-between">
+          <div className="flex items-center gap-4 md:gap-8">
+            <Link
+              href="/"
+              className="flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold rounded-xl shrink-0"
+              aria-label="GrillRoom Home"
+            >
+              <div className="bg-[#F6EFE1] p-1.5 rounded-xl border border-[rgba(212,175,55,0.35)] flex items-center shrink-0 shadow-sm">
+                <Image
+                  src="/brand/grillroom-logo.png"
+                  alt="GrillRoom"
+                  width={180}
+                  height={48}
+                  priority
+                  className="h-10 md:h-12 w-auto object-contain"
+                />
+              </div>
             </Link>
 
-            {/* Stepper (Desktop) */}
-            <div className="hidden md:block">
-              <Stepper currentRound={currentRound} />
-            </div>
+            {/* Stepper (Desktop and Mobile) */}
+            <Stepper currentRound={currentRound} />
           </div>
 
-          <div className="flex items-center gap-3 md:gap-4">
-            <div className="text-right">
+          <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4 shrink-0">
+            <div className="text-right hidden sm:block">
               <span className="text-xs font-semibold tabular-nums text-slate-200 block">
-                Exchange {turnCount} of 14
+                Exchange {founderExchangeCount} of 14
               </span>
               <span className="text-[11px] text-slate-400 block">
-                {INTENSITY_NAMES[intensity]}
+                Investor Panel · {INTENSITY_NAMES[intensity]}
               </span>
             </div>
 
             {/* Ledger Drawer Toggle for Tablets & Mobile */}
             <button
               onClick={() => setShowLedgerDrawer(!showLedgerDrawer)}
-              className="xl:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-field bg-slate-800 text-xs font-semibold text-slate-200 hover:text-white border border-slate-700 transition-subtle"
+              className="xl:hidden inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-field bg-slate-800 text-xs font-semibold text-slate-200 hover:text-white border border-slate-700 transition-subtle shrink-0"
               aria-label="Toggle Due Diligence Ledger"
             >
               <SlidersHorizontal className="w-3.5 h-3.5" aria-hidden="true" />
@@ -373,75 +387,106 @@ export default function SessionStagePage() {
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => setShowDebriefConfirm(true)}
-              className="text-xs"
+              disabled={!canGenerateDebrief}
+              title={!canGenerateDebrief ? "Answer at least 3 questions first" : "Generate Investor Debrief"}
+              onClick={() => {
+                if (canGenerateDebrief) setShowDebriefConfirm(true);
+              }}
+              className="text-xs disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
             >
-              Generate Investor Debrief
+              <span className="hidden sm:inline">Generate Investor Debrief</span>
+              <span className="sm:hidden">Debrief</span>
             </Button>
           </div>
         </div>
       </header>
 
       {/* Main Review Area */}
-      <main id="main-content" className="flex-1 max-w-page mx-auto w-full px-4 md:px-6 py-6 space-y-6">
-        {/* 2. Investor Panel Strip (5 executive cards) */}
+      <main id="main-content" className="flex-1 max-w-6xl mx-auto w-full px-4 md:px-6 py-4 space-y-4">
+        {/* 2. Investor Panel Strip (5 compact executive cards) */}
         <section aria-label="Investor Panelists">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {Object.entries(INVESTOR_PROFILES).map(([key, prof]) => {
               const meter = convictions[key] ?? 50;
               const prev = previousConvictions[key] ?? meter;
+              const delta = meter - prev;
               const isSpeaking = activeSpeaker === key;
 
               return (
                 <Card
                   key={key}
-                  className={`p-3.5 transition-subtle ${
+                  className={`p-3 transition-subtle flex flex-col justify-between ${
                     isSpeaking
-                      ? "ring-2 ring-gold shadow-md bg-amber-50/20"
+                      ? "ring-2 ring-cta shadow-md bg-orange-50/20"
                       : activeSpeaker
-                      ? "opacity-75 bg-surface"
+                      ? "opacity-80 bg-surface"
                       : "bg-surface"
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-2 min-w-0">
+                  <div>
+                    {/* Top row: Avatar + Name/Role on left, Conviction % on right */}
+                    <div className="flex items-start justify-between gap-1.5 mb-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div
+                          className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold font-sans flex-shrink-0 ${
+                            isSpeaking ? "bg-cta text-white" : "bg-navy text-white"
+                          }`}
+                          aria-hidden="true"
+                        >
+                          {prof.initials}
+                        </div>
+                        <div className="min-w-0">
+                          <span className="text-xs font-bold text-navy truncate block">
+                            {prof.name}
+                          </span>
+                          <span className="text-[10px] text-text-2 truncate block">
+                            {prof.title.split(" ")[0]}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="text-right flex-shrink-0">
+                        <span className="text-sm font-bold font-sans tabular-nums text-navy block">
+                          {meter}%
+                        </span>
+                        {delta !== 0 && (
+                          <span
+                            className={`text-[10px] font-bold tabular-nums block ${
+                              delta > 0 ? "text-success" : "text-danger"
+                            }`}
+                          >
+                            {delta > 0 ? `+${delta}` : delta}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Thin Conviction Meter Bar */}
+                    <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
                       <div
-                        className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold font-sans flex-shrink-0 ${
-                          isSpeaking ? "bg-gold text-white" : "bg-navy text-white"
+                        className={`h-full transition-all duration-500 ${
+                          meter > 50 ? "bg-cta" : meter < 50 ? "bg-danger" : "bg-slate-400"
                         }`}
-                        aria-hidden="true"
-                      >
-                        {prof.initials}
-                      </div>
-                      <div className="min-w-0">
-                        <span className="text-xs font-bold text-navy truncate block">
-                          {prof.name}
-                        </span>
-                        <span className="text-[10px] text-text-2 truncate block">
-                          {prof.title}
-                        </span>
-                      </div>
+                        style={{ width: `${Math.min(Math.max(meter, 0), 100)}%` }}
+                      />
                     </div>
                   </div>
 
-                  {/* Conviction Meter */}
-                  <Meter
-                    value={meter}
-                    previousValue={prev}
-                    label="Conviction"
-                    showBandLabel={true}
-                  />
+                  {/* Single Status Chip Row + Reaction Badge */}
+                  <div className="mt-2 pt-1.5 border-t border-border/60 flex items-center justify-between min-h-[22px]">
+                    <div className="flex items-center gap-1.5">
+                      <ReactionBadge investorId={key} delta={delta} />
+                    </div>
 
-                  {/* Active Status Flag */}
-                  <div className="mt-2 pt-2 border-t border-border/80 flex items-center justify-between text-[11px]">
-                    <span className="text-text-2 text-[10px]">Status</span>
                     {isSpeaking ? (
-                      <span className="inline-flex items-center gap-1 font-bold text-gold-dark text-[11px]">
-                        <span className="w-1.5 h-1.5 rounded-full bg-gold animate-ping" aria-hidden="true" />
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-cta bg-orange-50 border border-orange-200 px-1.5 py-0.5 rounded-full">
+                        <span className="w-1.5 h-1.5 rounded-full bg-cta animate-ping" aria-hidden="true" />
                         Speaking
                       </span>
                     ) : (
-                      <span className="text-slate-400 text-[11px]">Listening</span>
+                      <span className="text-[10px] text-text-2 bg-slate-100 px-1.5 py-0.5 rounded-full">
+                        Listening
+                      </span>
                     )}
                   </div>
                 </Card>
@@ -454,24 +499,49 @@ export default function SessionStagePage() {
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
           {/* Conversation Column (8 cols on XL) */}
           <div className="xl:col-span-8 space-y-4">
-            <Card className="p-5 md:p-6 flex flex-col min-h-[580px]">
-              <div className="flex items-center justify-between pb-3 border-b border-border mb-4">
+            <Card className="p-4 md:p-5 flex flex-col h-[calc(100dvh-230px)] min-h-[480px] max-h-[760px]">
+              {/* Dialogue Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-border mb-3 flex-shrink-0">
                 <div>
                   <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-gold-dark block">
-                    Live Partner Dialogue
+                    Live Panel Dialogue
                   </span>
                   <h2 className="text-base font-serif font-bold text-navy">
                     Investor Review
                   </h2>
                 </div>
                 <span className="text-xs text-text-2">
-                  {turns.length} exchange{turns.length === 1 ? "" : "s"} recorded
+                  {founderExchangeCount} exchange{founderExchangeCount === 1 ? "" : "s"} recorded
                 </span>
               </div>
 
-              {/* Transcript Stream */}
+              {/* Collapsible Read-Only "Your Pitch" Chip */}
+              {pitchText && (
+                <div className="mb-3 pb-2 border-b border-border/70 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setIsPitchCollapsed(!isPitchCollapsed)}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-text-2 hover:text-navy transition-subtle bg-surface-2 hover:bg-slate-200 px-2.5 py-1 rounded-full border border-border"
+                    aria-expanded={!isPitchCollapsed}
+                  >
+                    <span>Your Pitch</span>
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                        isPitchCollapsed ? "" : "rotate-180"
+                      }`}
+                    />
+                  </button>
+                  {!isPitchCollapsed && (
+                    <div className="mt-2 p-3 bg-slate-50 border border-border rounded-field text-xs text-text leading-relaxed max-h-28 overflow-y-auto whitespace-pre-wrap">
+                      {pitchText}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Transcript Stream (Internally scrolling) */}
               <div
-                className="flex-1 overflow-y-auto space-y-4 max-h-[500px] pr-2"
+                className="flex-1 overflow-y-auto space-y-3.5 pr-1 min-h-0"
                 aria-live="polite"
                 aria-relevant="additions text"
               >
@@ -586,10 +656,10 @@ export default function SessionStagePage() {
                 <div ref={transcriptEndRef} />
               </div>
 
-              {/* Composer (Sticky Bottom) */}
-              <div className="mt-4 pt-3 border-t border-border space-y-2">
+              {/* Composer (Sticky Bottom of Card) */}
+              <div className="pt-3 border-t border-border space-y-2 flex-shrink-0">
                 {errorMessage && (
-                  <div className="p-2.5 rounded-field bg-red-50 border border-red-200 text-danger text-xs font-medium flex items-center gap-2">
+                  <div className="p-2 rounded-field bg-red-50 border border-red-200 text-danger text-xs font-medium flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
                     <span>{errorMessage}</span>
                   </div>
@@ -623,8 +693,8 @@ export default function SessionStagePage() {
                     />
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <p className="text-[11px] text-text-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[11px] text-text-2 hidden sm:block">
                       Cite numbers, sources and methods. Ctrl+Enter to send.
                     </p>
 
@@ -634,6 +704,7 @@ export default function SessionStagePage() {
                       size="sm"
                       disabled={!answerInput.trim() || isStreaming}
                       rightIcon={<Send className="w-3.5 h-3.5" aria-hidden="true" />}
+                      className="bg-cta hover:bg-cta-hover focus-visible:ring-gold text-white font-semibold shadow-subtle disabled:opacity-50 ml-auto"
                     >
                       {isStreaming ? "Investor speaking" : "Submit Response"}
                     </Button>
@@ -644,7 +715,7 @@ export default function SessionStagePage() {
           </div>
 
           {/* Due Diligence Ledger Column (Desktop 4 cols, sticky) */}
-          <div className="hidden xl:block xl:col-span-4 xl:sticky xl:top-20">
+          <div className="hidden xl:block xl:col-span-4 xl:sticky xl:top-20 xl:max-h-[calc(100dvh-230px)] xl:overflow-y-auto">
             <DueDiligenceLedger claims={claims} />
           </div>
         </div>

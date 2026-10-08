@@ -8,3 +8,21 @@
 export const FEATURE_INTRO_GATE =
   typeof process !== "undefined" &&
   process.env.NEXT_PUBLIC_FEATURE_INTRO_GATE === "true";
+
+export const FEATURE_REACTIONS =
+  typeof process !== "undefined" &&
+  process.env.NEXT_PUBLIC_FEATURE_REACTIONS === "true";
+
+export const FEATURE_RADAR =
+  typeof process !== "undefined" &&
+  process.env.NEXT_PUBLIC_FEATURE_RADAR === "true";
+
+export const FEATURE_SHARE_CARD =
+  typeof process !== "undefined" &&
+  process.env.NEXT_PUBLIC_FEATURE_SHARE_CARD === "true";
+
+export const FEATURE_BEHIND_DOORS =
+  typeof process !== "undefined" &&
+  process.env.NEXT_PUBLIC_FEATURE_BEHIND_DOORS === "true";
+
+

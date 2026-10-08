@@ -58,3 +58,16 @@ export async function checkRateLimit(
     return { allowed: true, remaining: limitPerMin };
   }
 }
+
+/**
+ * Generates a short random error reference ID and logs the full internal error
+ * and stack trace safely to the server console only.
+ */
+export function logServerError(err: unknown, context: string): string {
+  const errorId = "err_" + Math.random().toString(36).slice(2, 10);
+  const message = err instanceof Error ? err.message : String(err);
+  const stack = err instanceof Error ? err.stack : "";
+  console.error(`[${context}] [${errorId}]`, message, stack ? `\n${stack}` : "");
+  return errorId;
+}
+
