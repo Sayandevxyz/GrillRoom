@@ -27,8 +27,8 @@ The panel consists of four distinct venture archetypes and one neutral Chair:
 - **Kavya (The Customer Voice & Product Strategist)**: Probes user behavior, observed switching friction, and customer interviews. Distrusts assumed demand. Signature question: *"Tell me about the last five people you spoke to. What did they do, not say?"*
 - **Marcus Vance (The Neutral Chair)**: Impartial moderator who introduces the boardroom, enforces speaking discipline, handles transitions, and formally closes deliberations.
 
-### 2.2 The Claim Ledger
-Every factual assertion made by the founder is extracted into an in-memory / relational ledger with schema:
+### 2.2 The Due Diligence Ledger
+Every factual assertion made by the founder is extracted into an in-memory / relational Due Diligence Ledger with schema:
 - `id`, `session_id`, `category` (traction, financial, technical, market, team, product), `statement`, `confidence`, `status` (`verified`, `questioned`, `refuted`), `source_turn`.
 - When answers contain metric shifts or discrepancies (e.g. CAC moving from $650 to $4,500), the ledger flags contradictions, prompting immediate investor interrupts.
 
@@ -96,10 +96,10 @@ Unlike naive LLM simulators where the model hallucinates an arbitrary decision, 
        │ HTTPS / Server-Sent Events (SSE)
        ▼
 [Next.js 14 App Router API Layer]
-  ├── /api/session/start        --> Validates input (Zod), establishes session cookie, seeds Claim Ledger, delivers Chair intro
+  ├── /api/session/start        --> Validates input (Zod), establishes session cookie, seeds Due Diligence Ledger, delivers Chair intro
   ├── /api/session/answer (SSE) --> 
   │     ├─ Step 1: 20B Analyst evaluates founder response (directness, metric extraction, contradiction flags)
-  │     ├─ Step 2: Code engine updates Claim Ledger & recomputes Conviction (0-100%)
+  │     ├─ Step 2: Code engine updates Due Diligence Ledger & recomputes Conviction (0-100%)
   │     ├─ Step 3: Planner selects next investor using deterministic rules (contradiction interrupt, cross-talk, turn caps)
   │     └─ Step 4: 120B Investor streams persona-grounded speech with SSE back to browser
   ├── /api/session/verdict      --> Computes algorithmic In/Conditional/Out verdicts and simulated term sheets
@@ -129,7 +129,7 @@ Unlike naive LLM simulators where the model hallucinates an arbitrary decision, 
 4. **Session Lifetime & Cookie Ownership**:
    - Sessions are bound to the founder's browser via secure `httpOnly`, `SameSite=Lax` cookies containing a cryptographic session owner token. Unowned requests receive `403 Forbidden`.
 5. **Context Window Capping**:
-   - To maintain real-time generation speeds and eliminate degradation, the prompt engine sends the summarized Claim Ledger, the active panel state, and strictly the last 4 dialogue turns to the LLM.
+   - To maintain real-time generation speeds and eliminate degradation, the prompt engine sends the summarized Due Diligence Ledger, the active panel state, and strictly the last 4 dialogue turns to the LLM.
 
 ---
 
@@ -221,7 +221,7 @@ Access the application at [http://localhost:3000](http://localhost:3000).
    - Observe:
      - **Interrupt Rule**: Rohan immediately breaks in with *"Hold on — you said $450 a moment ago..."*
      - **Conviction Delta**: Rohan's meter drops by $-15\%$.
-     - **Claim Ledger Drawer**: Open the drawer to see the discrepancy flagged under **Refuted/Questioned**.
+     - **Due Diligence Ledger**: Inspect the live ledger to see the discrepancy flagged under **Needs Attention** or **Contradiction**.
 
 3. **Step 3: Verdicts, Debrief & Progression Audit (1:45 - 3:00)**
    - Click **Pass to Verdict & Debrief**.
