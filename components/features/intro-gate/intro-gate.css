@@ -1,0 +1,325 @@
+/* ==========================================================================
+   GrillRoom Intro Gate Styles
+   All classes scoped with .intro- prefix. No global bleeding.
+   ========================================================================== */
+
+.intro-screen {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  z-index: 9999;
+  overflow: hidden;
+  background: #080A0F;
+  color: #F8FAFC;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  pointer-events: auto;
+}
+
+.intro-screen.intro-fading-out {
+  opacity: 0;
+  transform: scale(1.02);
+  pointer-events: none;
+}
+
+/* Screen Vignette */
+.intro-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 15;
+  background: radial-gradient(circle at center, transparent 40%, rgba(0, 0, 0, 0.65) 100%);
+}
+
+/* Door Panels */
+.intro-gate-panel {
+  position: absolute;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  background:
+    linear-gradient(90deg, rgba(249, 115, 22, 0.08), transparent),
+    #111827;
+  border-color: rgba(212, 175, 55, 0.22);
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.45);
+  transition: transform 1.35s cubic-bezier(0.76, 0, 0.24, 1);
+  z-index: 5;
+  overflow: hidden;
+}
+
+/* Architectural door frame insets / vertical moldings */
+.intro-gate-panel::before {
+  content: "";
+  position: absolute;
+  top: 4%;
+  bottom: 4%;
+  width: calc(100% - 32px);
+  border: 1px solid rgba(212, 175, 55, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.015) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+.intro-gate-left {
+  left: 0;
+  border-right: 1px solid rgba(212, 175, 55, 0.25);
+}
+
+.intro-gate-left::before {
+  right: 16px;
+}
+
+.intro-gate-right {
+  right: 0;
+  border-left: 1px solid rgba(212, 175, 55, 0.25);
+}
+
+.intro-gate-right::before {
+  left: 16px;
+}
+
+.intro-screen.intro-opening .intro-gate-left {
+  transform: translateX(-100%);
+}
+
+.intro-screen.intro-opening .intro-gate-right {
+  transform: translateX(100%);
+}
+
+/* Center Split Hairline & Subtle Glow */
+.intro-split-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, transparent 5%, rgba(212, 175, 55, 0.6) 50%, transparent 95%);
+  box-shadow: 0 0 16px rgba(249, 115, 22, 0.45);
+  z-index: 8;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.intro-screen.intro-opening .intro-split-line {
+  opacity: 0;
+}
+
+/* Center Light Flash / Atmosphere */
+.intro-center-light {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(249, 115, 22, 0.38), transparent 48%);
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.intro-screen.intro-opening .intro-center-light {
+  opacity: 1;
+}
+
+/* Centered Content Container */
+.intro-content {
+  position: relative;
+  z-index: 20;
+  max-width: 680px;
+  width: 90%;
+  margin: 0 auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 2rem 1rem;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.intro-screen.intro-opening .intro-content {
+  opacity: 0;
+  transform: scale(0.96);
+  pointer-events: none;
+}
+
+/* Staggered entrance animations */
+@keyframes introRiseFade {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.intro-animate-1 {
+  animation: introRiseFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.intro-animate-2 {
+  opacity: 0;
+  animation: introRiseFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.12s forwards;
+}
+
+.intro-animate-3 {
+  opacity: 0;
+  animation: introRiseFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.22s forwards;
+}
+
+.intro-animate-4 {
+  opacity: 0;
+  animation: introRiseFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.32s forwards;
+}
+
+.intro-animate-5 {
+  opacity: 0;
+  animation: introRiseFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.44s forwards;
+}
+
+/* Logo mark */
+.intro-logo-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.25rem;
+}
+
+.intro-logo-img {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 16px rgba(249, 115, 22, 0.4));
+}
+
+/* Tagline / Eyebrow */
+.intro-tagline {
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: #D4AF37;
+  text-shadow: 0 1px 8px rgba(212, 175, 55, 0.25);
+  margin: 0;
+}
+
+/* Main Headline */
+.intro-headline {
+  font-family: inherit;
+  font-size: clamp(2.25rem, 6vw, 4.25rem);
+  line-height: 1.08;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #F8FAFC;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.intro-headline-accent {
+  display: block;
+  color: #F97316;
+  text-shadow: 0 4px 24px rgba(249, 115, 22, 0.45);
+  margin-top: 0.2rem;
+}
+
+/* Subtext */
+.intro-subtext {
+  font-size: clamp(0.95rem, 2vw, 1.125rem);
+  line-height: 1.5;
+  color: #94A3B8;
+  margin: 0;
+  max-width: 440px;
+}
+
+/* CTA Enter Button */
+.intro-enter-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  padding: 0.95rem 2.25rem;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  background: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
+  color: #FFFFFF;
+  border: 1px solid rgba(212, 175, 55, 0.38);
+  border-radius: 9999px;
+  box-shadow: 0 12px 36px rgba(249, 115, 22, 0.32), 0 2px 8px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
+  min-height: 52px;
+  width: auto;
+}
+
+.intro-enter-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #EA580C 0%, #C2410C 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 16px 42px rgba(249, 115, 22, 0.45), 0 4px 12px rgba(0, 0, 0, 0.5);
+  border-color: rgba(212, 175, 55, 0.6);
+}
+
+.intro-enter-button:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 6px 20px rgba(249, 115, 22, 0.3);
+}
+
+.intro-enter-button:focus-visible {
+  ring: 3px solid #D4AF37;
+  outline: 2px solid #D4AF37;
+  outline-offset: 3px;
+}
+
+.intro-enter-button:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Reduced Motion Mode */
+@media (prefers-reduced-motion: reduce) {
+  .intro-gate-panel,
+  .intro-center-light,
+  .intro-screen,
+  .intro-content,
+  .intro-split-line {
+    transition: opacity 0.3s ease !important;
+  }
+
+  .intro-screen.intro-opening .intro-gate-left,
+  .intro-screen.intro-opening .intro-gate-right {
+    transform: none !important;
+    opacity: 0 !important;
+  }
+
+  .intro-animate-1,
+  .intro-animate-2,
+  .intro-animate-3,
+  .intro-animate-4,
+  .intro-animate-5 {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* Mobile Adjustments */
+@media (max-width: 640px) {
+  .intro-content {
+    gap: 1rem;
+    padding: 1.5rem 1rem;
+  }
+
+  .intro-enter-button {
+    width: 100%;
+    max-width: 320px;
+    padding: 0.9rem 1.5rem;
+  }
+}
