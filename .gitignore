@@ -28,3 +28,9 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 *.tsbuildinfo
+
+# Build cache and archives
+*.log
+*.zip
+*.tar.gz
+.turbo
