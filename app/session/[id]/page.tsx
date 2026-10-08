@@ -18,6 +18,7 @@ import {
   FileCheck2,
   ChevronDown,
 } from "lucide-react";
+import { ReactionBadge } from "@/components/features/reactions/ReactionBadge";
 
 interface Turn {
   id?: number;
@@ -473,10 +474,10 @@ export default function SessionStagePage() {
                     </div>
                   </div>
 
-                  {/* Single Status Chip Row + Reserved spot for Step 4 reaction badge */}
+                  {/* Single Status Chip Row + Reaction Badge */}
                   <div className="mt-2 pt-1.5 border-t border-border/60 flex items-center justify-between min-h-[22px]">
                     <div className="flex items-center gap-1.5">
-                      {/* Clear spot reserved for reaction badge in Step 4 */}
+                      <ReactionBadge investorId={key} delta={delta} />
                     </div>
 
                     {isSpeaking ? (
