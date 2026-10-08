@@ -22,8 +22,16 @@ async function runMigration() {
   // Execute schema definitions
   try {
     type NeonRawQuery = (query: string) => Promise<unknown>;
-    await (sql as unknown as NeonRawQuery)(schemaSql);
-    console.log("✅ Schema migration executed successfully!");
+    // Split statements cleanly by semicolon
+    const statements = schemaSql
+      .split(";")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
+    for (const statement of statements) {
+      await (sql as unknown as NeonRawQuery)(statement);
+    }
+    console.log(`✅ Schema migration executed successfully (${statements.length} statements)!`);
   } catch (err) {
     console.error("❌ Migration failed:", err);
     process.exit(1);
