@@ -336,35 +336,32 @@ export default function SessionStagePage() {
   return (
     <div className="min-h-screen flex flex-col justify-between">
       {/* 1. Shared Authority Top Bar */}
-      <header className="bg-navy text-white border-b border-slate-800 sticky top-0 z-30 shadow-md">
-        <div className="max-w-6xl mx-auto px-6 py-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-6">
+      <header className="bg-[#14284F] text-white border-t border-[#D4AF37]/30 border-b-2 border-[#D4572B] sticky top-0 z-30 shadow-[0_4px_16px_rgba(0,0,0,0.25)] h-20 min-h-[5rem] flex items-center">
+        <div className="w-full max-w-6xl mx-auto px-6 flex items-center justify-between">
+          <div className="flex items-center gap-4 md:gap-8">
             <Link
               href="/"
-              className="flex items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold rounded"
+              className="flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold rounded-xl shrink-0"
               aria-label="GrillRoom Home"
             >
-              <Image
-                src="/brand/logo-mark.png"
-                alt="GrillRoom Flame"
-                width={36}
-                height={36}
-                priority
-                className="h-9 w-auto object-contain"
-              />
-              <span className="font-serif font-bold text-xl tracking-tight text-white">
-                Grill<span className="text-cta">Room</span>
-              </span>
+              <div className="bg-[#F6EFE1] p-1.5 rounded-xl border border-[rgba(212,175,55,0.35)] flex items-center shrink-0 shadow-sm">
+                <Image
+                  src="/brand/grillroom-logo.png"
+                  alt="GrillRoom"
+                  width={180}
+                  height={48}
+                  priority
+                  className="h-10 md:h-12 w-auto object-contain"
+                />
+              </div>
             </Link>
 
-            {/* Stepper (Desktop) */}
-            <div className="hidden md:block">
-              <Stepper currentRound={currentRound} />
-            </div>
+            {/* Stepper (Desktop and Mobile) */}
+            <Stepper currentRound={currentRound} />
           </div>
 
-          <div className="flex items-center gap-3 md:gap-4">
-            <div className="text-right">
+          <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4 shrink-0">
+            <div className="text-right hidden sm:block">
               <span className="text-xs font-semibold tabular-nums text-slate-200 block">
                 Exchange {founderExchangeCount} of 14
               </span>
@@ -376,7 +373,7 @@ export default function SessionStagePage() {
             {/* Ledger Drawer Toggle for Tablets & Mobile */}
             <button
               onClick={() => setShowLedgerDrawer(!showLedgerDrawer)}
-              className="xl:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-field bg-slate-800 text-xs font-semibold text-slate-200 hover:text-white border border-slate-700 transition-subtle"
+              className="xl:hidden inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-field bg-slate-800 text-xs font-semibold text-slate-200 hover:text-white border border-slate-700 transition-subtle shrink-0"
               aria-label="Toggle Due Diligence Ledger"
             >
               <SlidersHorizontal className="w-3.5 h-3.5" aria-hidden="true" />
@@ -395,9 +392,10 @@ export default function SessionStagePage() {
               onClick={() => {
                 if (canGenerateDebrief) setShowDebriefConfirm(true);
               }}
-              className="text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+              className="text-xs disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
             >
-              Generate Investor Debrief
+              <span className="hidden sm:inline">Generate Investor Debrief</span>
+              <span className="sm:hidden">Debrief</span>
             </Button>
           </div>
         </div>
