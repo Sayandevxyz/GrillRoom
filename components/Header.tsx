@@ -29,7 +29,7 @@ export const Header: React.FC<HeaderProps> = ({ onHowItWorksClick, className = "
               width={36}
               height={36}
               priority
-              className="h-9 w-auto object-contain"
+              className="h-9 w-auto object-contain rounded-md shadow-sm"
             />
             <span className="font-serif font-bold text-xl tracking-tight text-white">
               Grill<span className="text-cta">Room</span>

@@ -27,12 +27,15 @@ async function prepareBrandAssets() {
   console.log("✅ logo-header.png and logo-header.webp generated");
 
   // 2. Crop the mark (the emblem on the left: fireplace/flame)
-  // The original is 1024x512. The emblem is in approximately the left 400x400 region.
-  // Let's create a square crop of the left emblem:
-  await sharp(inputLogo)
-    .extract({ left: 160, top: 120, width: 260, height: 260 })
-    .resize(512, 512, { fit: "contain", background: { r: 247, g: 244, b: 239, alpha: 0 } })
-    .png()
+  // Perfectly centered 220x220 crop of the fireplace and flame emblem
+  const markSource = fs.existsSync(path.join(brandDir, "grillroom-logo-raw.png"))
+    ? path.join(brandDir, "grillroom-logo-raw.png")
+    : inputLogo;
+
+  await sharp(markSource)
+    .extract({ left: 172, top: 141, width: 220, height: 220 })
+    .resize(512, 512)
+    .png({ quality: 95 })
     .toFile(path.join(brandDir, "logo-mark.png"));
 
   const markPath = path.join(brandDir, "logo-mark.png");
