@@ -6,8 +6,27 @@
  */
 
 // Exchange & Session Progression Limits
-export const MAX_EXCHANGES = 14;
+export const DEFAULT_MAX_EXCHANGES = 14;
+export const MAX_EXCHANGES = DEFAULT_MAX_EXCHANGES;
 export const MIN_EXCHANGES_FOR_DEBRIEF = 3;
+
+/** Exchange limits mapped to review intensity modes. */
+export const EXCHANGES_BY_INTENSITY: Record<string, number> = {
+  friendly: 5,
+  tough: 7,
+  shark: 12,
+};
+
+/**
+ * Returns the maximum allowed exchanges for a given session intensity mode.
+ * Defaults to DEFAULT_MAX_EXCHANGES (14) if unspecified or unrecognized.
+ */
+export function getMaxExchanges(intensity?: string | null): number {
+  if (intensity && intensity in EXCHANGES_BY_INTENSITY) {
+    return EXCHANGES_BY_INTENSITY[intensity];
+  }
+  return DEFAULT_MAX_EXCHANGES;
+}
 
 // Conviction Meter Bounds & Caps
 export const INITIAL_CONVICTION = 50;

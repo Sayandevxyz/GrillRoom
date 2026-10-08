@@ -19,6 +19,7 @@ import { buildInvestorPrompt } from "../llm/prompts";
 import { createStreamingChatCompletion, DEFAULT_BIG_MODEL } from "../llm/groq";
 import type OpenAI from "openai";
 import { logger } from "../logger";
+import { getMaxExchanges } from "../constants";
 
 export interface SessionRecord {
   id: string;
@@ -365,7 +366,9 @@ export async function executeInterrogationTurn(
     session.turn_count = newTurnCount;
   }
 
-  const maxTurns = Number(process.env.MAX_TURNS) || 14;
+  const maxTurns = process.env.MAX_TURNS
+    ? Number(process.env.MAX_TURNS)
+    : getMaxExchanges(session.intensity);
   const shouldMoveToKillShot = newTurnCount >= maxTurns;
 
   const saveInvestorTurn = async (speech: string) => {

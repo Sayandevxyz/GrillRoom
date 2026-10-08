@@ -1,7 +1,7 @@
-import React, { RefObject } from "react";
+import React, { RefObject, useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { AlertTriangle, Send, ChevronDown } from "lucide-react";
+import { AlertTriangle, Send, ChevronDown, ArrowDown } from "lucide-react";
 import { Turn } from "@/lib/hooks/useSessionState";
 import { StreamingMeta } from "@/lib/hooks/useAnswerSubmit";
 import { INVESTOR_PROFILES } from "@/lib/constants";
@@ -55,8 +55,23 @@ export function LiveDialogueCard({
   textareaRef,
   transcriptEndRef,
 }: LiveDialogueCardProps) {
+  const [showScrollBottom, setShowScrollBottom] = useState(false);
+
+  const handleTranscriptScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    const isFarFromBottom = target.scrollHeight - target.scrollTop - target.clientHeight > 180;
+    setShowScrollBottom(isFarFromBottom);
+  };
+
+  const scrollToBottom = () => {
+    if (transcriptEndRef.current) {
+      transcriptEndRef.current.scrollIntoView({ behavior: "smooth" });
+      setShowScrollBottom(false);
+    }
+  };
+
   return (
-    <Card className="p-4 md:p-5 flex flex-col h-[calc(100dvh-200px)] min-h-[540px]">
+    <Card className="p-4 md:p-5 flex flex-col h-[calc(100dvh-170px)] min-h-[640px] relative">
       {/* Dialogue Header */}
       <div className="flex items-center justify-between pb-3 border-b border-border mb-3 flex-shrink-0">
         <div>
@@ -89,7 +104,7 @@ export function LiveDialogueCard({
             />
           </button>
           {!isPitchCollapsed && (
-            <div className="mt-2 p-3 bg-slate-50 border border-border rounded-field text-xs text-text leading-relaxed max-h-20 overflow-y-auto whitespace-pre-wrap">
+            <div className="mt-2 p-3 bg-slate-50 border border-border rounded-field text-xs text-text leading-relaxed max-h-36 overflow-y-auto whitespace-pre-wrap">
               {pitchText}
             </div>
           )}
@@ -98,7 +113,8 @@ export function LiveDialogueCard({
 
       {/* Transcript Stream (Internally scrolling) */}
       <div
-        className="flex-1 overflow-y-auto space-y-3.5 pr-1 min-h-0 scroll-smooth"
+        onScroll={handleTranscriptScroll}
+        className="flex-1 overflow-y-auto space-y-4 px-1 py-3 min-h-[300px] scroll-smooth scroll-pt-6 scroll-pb-6 relative"
         aria-live="polite"
         aria-relevant="additions text"
       >
@@ -119,12 +135,18 @@ export function LiveDialogueCard({
 
           if (turn.role === "founder") {
             return (
-              <div key={idx} className="flex justify-end">
-                <div className="max-w-[85%] bg-slate-50 border border-slate-200 rounded-field p-3.5 space-y-1 shadow-subtle">
-                  <span className="text-[11px] font-bold text-navy block">
-                    You
-                  </span>
-                  <p className="text-sm text-text leading-relaxed whitespace-pre-wrap font-sans">
+              <div key={idx} className="flex justify-end w-full">
+                <div className="max-w-[90%] sm:max-w-[85%] bg-[#FAF8F5] border border-[#E2D8C3] rounded-field p-3.5 sm:p-4 space-y-2 shadow-subtle text-left">
+                  <div className="flex items-center justify-between gap-3 border-b border-[#E8DFCE] pb-1.5">
+                    <span className="text-[11px] font-bold text-navy uppercase tracking-wider flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-[#14284F]" aria-hidden="true" />
+                      You
+                    </span>
+                    <span className="text-[10px] text-text-2 font-mono tabular-nums">
+                      {turn.text.length} chars
+                    </span>
+                  </div>
+                  <p className="text-sm text-text leading-relaxed whitespace-pre-wrap font-sans break-words select-text">
                     {turn.text}
                   </p>
                 </div>
@@ -213,6 +235,21 @@ export function LiveDialogueCard({
         <div ref={transcriptEndRef} />
       </div>
 
+      {/* Floating Jump to Latest Button when scrolled up */}
+      {showScrollBottom && (
+        <div className="flex justify-end px-2 -mb-2 z-10">
+          <button
+            type="button"
+            onClick={scrollToBottom}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-navy text-white text-xs font-semibold shadow-md hover:bg-slate-800 transition-all border border-gold/40 animate-in fade-in"
+            aria-label="Scroll to newest messages"
+          >
+            <ArrowDown className="w-3.5 h-3.5 text-gold" aria-hidden="true" />
+            <span>Latest message</span>
+          </button>
+        </div>
+      )}
+
       {/* Composer (Sticky Bottom of Card) */}
       <div className="pt-3 border-t border-border space-y-2 flex-shrink-0">
         {errorMessage && (
@@ -236,7 +273,7 @@ export function LiveDialogueCard({
             <textarea
               ref={textareaRef}
               id="response-input"
-              rows={3}
+              rows={2}
               value={answerInput}
               onChange={(e) => setAnswerInput(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -246,7 +283,7 @@ export function LiveDialogueCard({
                   ? "Investor speaking... please wait"
                   : "Directly answer the question. Cite concrete metrics, sources, and methods. (Ctrl+Enter to send)"
               }
-              className="w-full bg-white border border-border focus:border-navy rounded-field p-3 text-text placeholder:text-slate-400 focus:outline-none transition-subtle text-sm leading-relaxed resize-none disabled:bg-slate-50 disabled:cursor-not-allowed"
+              className="w-full bg-white border border-border focus:border-navy rounded-field p-3 text-text placeholder:text-slate-400 focus:outline-none transition-subtle text-sm leading-relaxed resize-y min-h-[64px] max-h-[160px] disabled:bg-slate-50 disabled:cursor-not-allowed"
             />
           </div>
 

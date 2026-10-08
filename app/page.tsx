@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 import { IntensityMode } from "@/lib/types";
+import { getMaxExchanges } from "@/lib/constants";
 import {
   FileUp,
   FileCheck,
@@ -427,16 +428,19 @@ export default function SetupPage() {
                       {
                         id: "friendly" as IntensityMode,
                         title: "Angel Review",
+                        exchanges: getMaxExchanges("friendly"),
                         desc: "Constructive questions, patient follow-ups, supportive tone.",
                       },
                       {
                         id: "tough" as IntensityMode,
                         title: "Partner Meeting",
+                        exchanges: getMaxExchanges("tough"),
                         desc: "Rigorous unit economics, direct callouts, realistic pressure.",
                       },
                       {
                         id: "shark" as IntensityMode,
                         title: "Shark Tank Mode",
+                        exchanges: getMaxExchanges("shark"),
                         desc: "All five investors. Interruptions and pointed contradiction challenges.",
                       },
                     ].map((mode) => {
@@ -452,10 +456,15 @@ export default function SetupPage() {
                           }`}
                         >
                           <div className="flex items-start justify-between gap-3">
-                            <div className="space-y-0.5">
-                              <span className="text-sm font-bold text-navy block">
-                                {mode.title}
-                              </span>
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-bold text-navy block">
+                                  {mode.title}
+                                </span>
+                                <span className="text-[10px] font-bold text-[#8C6D1F] bg-[#FAF3E0] border border-[#D4AF37]/40 px-2 py-0.5 rounded-full tabular-nums">
+                                  {mode.exchanges} Exchanges
+                                </span>
+                              </div>
                               <p className="text-xs text-text-2 leading-relaxed">{mode.desc}</p>
                             </div>
 

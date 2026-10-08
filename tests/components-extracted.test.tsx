@@ -26,6 +26,7 @@ import { LiveDialogueCard } from "@/components/session/LiveDialogueCard";
 import { SessionHeader } from "@/components/session/SessionHeader";
 import { BehindDoorsScene } from "@/components/features/behind-doors/BehindDoorsScene";
 import { Header } from "@/components/Header";
+import type { IntensityMode } from "@/lib/types";
 
 vi.mock("@/lib/features/flags", () => ({
   FEATURE_INTRO_GATE: true,
@@ -248,10 +249,54 @@ describe("Extracted Components & A11y Suite", () => {
         />
       );
 
-      expect(screen.getByText("Exchange 4 of 14")).toBeInTheDocument();
+      expect(screen.getByText("Exchange 4 of 7")).toBeInTheDocument();
       const debriefBtn = screen.getByRole("button", { name: /generate investor debrief/i });
       fireEvent.click(debriefBtn);
       expect(handleDebrief).toHaveBeenCalled();
+    });
+
+    it("renders SessionHeader with custom exchange limits per intensity mode", () => {
+      const { rerender } = render(
+        <SessionHeader
+          currentRound="opening"
+          founderExchangeCount={2}
+          intensity="friendly"
+          claimsCount={1}
+          showLedgerDrawer={false}
+          onToggleLedgerDrawer={vi.fn()}
+          canGenerateDebrief={false}
+          onRequestDebrief={vi.fn()}
+        />
+      );
+      expect(screen.getByText("Exchange 2 of 5")).toBeInTheDocument();
+
+      rerender(
+        <SessionHeader
+          currentRound="opening"
+          founderExchangeCount={2}
+          intensity="shark"
+          claimsCount={1}
+          showLedgerDrawer={false}
+          onToggleLedgerDrawer={vi.fn()}
+          canGenerateDebrief={false}
+          onRequestDebrief={vi.fn()}
+        />
+      );
+      expect(screen.getByText("Exchange 2 of 12")).toBeInTheDocument();
+
+      rerender(
+        <SessionHeader
+          currentRound="opening"
+          founderExchangeCount={2}
+          intensity={"custom" as unknown as IntensityMode}
+          claimsCount={1}
+          showLedgerDrawer={false}
+          onToggleLedgerDrawer={vi.fn()}
+          canGenerateDebrief={false}
+          onRequestDebrief={vi.fn()}
+        />
+      );
+      expect(screen.getByText("Exchange 2 of 14")).toBeInTheDocument();
     });
 
     it("renders InvestorPanelStrip with speaking indicator and meters", () => {

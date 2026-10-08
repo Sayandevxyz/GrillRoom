@@ -87,10 +87,19 @@ export function useAnswerSubmit({
     if (!transcriptEndRef.current) return;
     const container = transcriptEndRef.current.parentElement;
     if (container) {
-      const isNearBottom =
-        container.scrollHeight - container.scrollTop - container.clientHeight < 180;
-      if (isNearBottom || isStreaming) {
-        transcriptEndRef.current.scrollIntoView({ behavior: "smooth" });
+      const distanceFromBottom =
+        container.scrollHeight - container.scrollTop - container.clientHeight;
+      const isNearBottom = distanceFromBottom < 220;
+
+      if (isStreaming) {
+        // Only auto-scroll streaming text if the founder hasn't scrolled up to review previous turns
+        if (isNearBottom) {
+          container.scrollTop = container.scrollHeight;
+        }
+      } else {
+        if (isNearBottom) {
+          transcriptEndRef.current.scrollIntoView({ behavior: "smooth" });
+        }
       }
     } else {
       transcriptEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -120,6 +129,14 @@ export function useAnswerSubmit({
       round: currentRound,
     };
     setTurns((prev) => [...prev, userTurn]);
+
+    // Ensure the submitted turn is scrolled into view smoothly
+    setTimeout(() => {
+      if (transcriptEndRef.current?.parentElement) {
+        const container = transcriptEndRef.current.parentElement;
+        container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
+      }
+    }, 50);
 
     setIsStreaming(true);
     setStreamingText("");
