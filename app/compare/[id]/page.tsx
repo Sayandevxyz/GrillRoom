@@ -2,8 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
-import { INVESTOR_PERSONAS } from "@/lib/engine/personas";
+import { Button } from "@/components/ui/Button";
+import { Chip } from "@/components/ui/Chip";
+import { ArrowRight, Printer } from "lucide-react";
 
 interface CompareData {
   originalSessionId: string;
@@ -24,7 +27,18 @@ interface CompareData {
   overallDelta: number;
 }
 
-export default function ComparePage() {
+const INVESTOR_PROFILES: Record<
+  string,
+  { name: string; title: string; initials: string }
+> = {
+  rohan: { name: "Rohan Mehta", title: "Unit Economics Partner", initials: "RM" },
+  meera: { name: "Meera Shah", title: "Market and GTM Investor", initials: "MS" },
+  arjun: { name: "Dr. Arjun Rao", title: "Product and Technical Moat", initials: "AR" },
+  kavya: { name: "Kavya Sen", title: "Customer Proof Analyst", initials: "KS" },
+  sam: { name: "Sam Kapoor", title: "Founder and Deal Terms Partner", initials: "SK" },
+};
+
+export default function CompareReportPage() {
   const params = useParams();
   const sessionId = params.id as string;
 
@@ -39,7 +53,7 @@ export default function ComparePage() {
         const res = await fetch(`/api/session/compare?sessionId=${sessionId}`);
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
-          throw new Error(err.error || "Failed to load comparison");
+          throw new Error(err.error || "Failed to load comparative audit");
         }
         const json = (await res.json()) as CompareData;
         setData(json);
@@ -53,208 +67,230 @@ export default function ComparePage() {
     if (sessionId) fetchCompare();
   }, [sessionId]);
 
+  const handlePrint = () => {
+    if (typeof window !== "undefined") window.print();
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-background text-slate-100 flex flex-col items-center justify-center p-6 space-y-4">
-        <div className="w-12 h-12 border-4 border-shark-orange/30 border-t-shark-orange rounded-full animate-spin"></div>
-        <p className="text-slate-400 font-mono text-sm">Evaluating Pitch Progression & Conviction Deltas...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 space-y-4">
+        <div className="w-10 h-10 border-3 border-navy/20 border-t-navy rounded-full animate-spin" />
+        <div className="text-center space-y-1">
+          <p className="font-serif font-bold text-navy text-base">
+            Evaluating Pitch Progression
+          </p>
+          <p className="text-xs text-text-2">
+            Calculating conviction deltas, diligence criteria shifts, and resolved threads...
+          </p>
+        </div>
       </div>
     );
   }
 
   if (errorMsg || !data) {
     return (
-      <div className="min-h-screen bg-background text-slate-100 flex flex-col items-center justify-center p-6 space-y-4">
-        <div className="p-4 bg-red-950/60 border border-red-500/50 rounded-xl max-w-md text-center text-sm text-red-200">
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 space-y-4">
+        <div className="p-4 bg-red-50 border border-red-200 rounded-field max-w-md text-center text-xs text-danger font-medium">
           {errorMsg || "Unable to display comparison"}
         </div>
-        <Link href="/" className="text-xs text-shark-orange hover:underline font-mono">
-          &larr; Return to Pit
+        <Link href="/" className="text-xs text-navy font-semibold underline">
+          &larr; Return to GrillRoom
         </Link>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-slate-100 flex flex-col justify-between selection:bg-shark-orange selection:text-white">
-      {/* Header */}
-      <header className="border-b border-surface-border bg-surface px-6 py-4 flex items-center justify-between sticky top-0 z-30 shadow-md">
-        <div className="flex items-center space-x-3">
-          <Link href="/" className="font-bold text-lg tracking-tight text-white flex items-center gap-1.5">
-            <span>🔥</span> GRILLROOM
-          </Link>
-          <span className="text-xs text-slate-500 font-mono">/ Comparative Audit</span>
-        </div>
-        <div className="flex items-center space-x-3">
-          {data.retrySessionId && (
-            <Link
-              href={`/session/${data.retrySessionId}`}
-              className="text-xs px-4 py-2 rounded-lg bg-shark-orange text-white font-bold uppercase tracking-wider glow-orange-sm hover:bg-orange-600 transition-all"
-            >
-              Resume Retry Stage &rarr;
+    <div className="min-h-screen flex flex-col justify-between">
+      {/* Top Header */}
+      <header className="bg-navy text-white px-6 py-3.5 border-b border-slate-800 sticky top-0 z-30 shadow-md no-print">
+        <div className="max-w-page mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/" className="flex items-center" aria-label="GrillRoom Home">
+              <Image
+                src="/brand/grillroom-logo.png"
+                alt="GrillRoom"
+                width={120}
+                height={30}
+                priority
+                className="h-7 w-auto object-contain"
+              />
             </Link>
-          )}
+            <span className="text-xs text-slate-400 border-l border-slate-700 pl-4 hidden sm:inline">
+              Comparative Diligence Audit
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handlePrint}
+              leftIcon={<Printer className="w-3.5 h-3.5" aria-hidden="true" />}
+            >
+              Save as PDF
+            </Button>
+
+            {data.retrySessionId && (
+              <Link href={`/session/${data.retrySessionId}`}>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  rightIcon={<ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />}
+                >
+                  Resume Retry Stage
+                </Button>
+              </Link>
+            )}
+          </div>
         </div>
       </header>
 
-      {/* Main Comparison Container */}
-      <main id="main-content" className="max-w-5xl mx-auto w-full px-4 md:px-6 py-8 space-y-10 flex-1">
-        {/* Top Header Card with Overall Delta */}
-        <div className="bg-surface-card border border-surface-border rounded-xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
-          <div className="space-y-1 text-center md:text-left">
-            <span className="text-xs uppercase tracking-widest text-slate-400 font-semibold font-mono">
-              Before vs After Progression
-            </span>
-            <h1 className="text-3xl font-extrabold text-white">Simulation Comparison</h1>
-            <p className="text-sm text-slate-400">
-              Measuring the impact of your tightened pitch, verified claims, and eliminated contradictions.
-            </p>
-          </div>
-
-          <div className="flex items-center space-x-4 bg-surface-elevated border border-surface-border p-4 rounded-xl">
-            <div className="text-center">
-              <span className="text-xs font-semibold text-slate-400 block font-mono">Overall Delta</span>
-              <span
-                className={`text-3xl font-extrabold font-mono ${
-                  data.overallDelta >= 0 ? "text-emerald-400" : "text-red-400"
-                }`}
-              >
-                {data.overallDelta >= 0 ? `+${data.overallDelta}` : data.overallDelta}%
+      {/* Main Memo */}
+      <main id="main-content" className="flex-1 max-w-page mx-auto w-full px-4 md:px-6 py-8 md:py-12">
+        <article className="panel bg-white p-6 sm:p-10 md:p-12 space-y-8 shadow-panel">
+          {/* Memo Header */}
+          <header className="border-b border-border pb-6 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-gold-dark">
+                Progression Telemetry
+              </span>
+              <span className="text-xs font-mono tabular-nums text-text-2">
+                Audit Delta: {data.overallDelta > 0 ? `+${data.overallDelta}%` : `${data.overallDelta}%`}
               </span>
             </div>
-            <div className="text-xs text-slate-400 border-l border-surface-border pl-4">
-              <span>Unresolved Threads: </span>
-              <span className="font-mono text-slate-200">
-                {data.unresolvedThreads.original} &rarr; {data.unresolvedThreads.retry}
-              </span>
-            </div>
-          </div>
-        </div>
 
-        {/* Per-Investor Conviction Comparison */}
-        <section className="bg-surface-card border border-surface-border rounded-xl p-6 md:p-8 space-y-6">
-          <div className="border-b border-surface-border pb-3">
-            <h2 className="font-bold text-lg text-white flex items-center gap-2">
-              <span>📈</span> Per-Investor Conviction Progression
-            </h2>
-            <p className="text-xs text-slate-400">
-              How each panelist responded to your tightened narrative and validated metrics.
+            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-navy tracking-tight">
+              Comparative Diligence Audit
+            </h1>
+            <p className="text-xs text-text-2">
+              Side-by-side progression between initial pitch and revised iteration.
             </p>
-          </div>
+          </header>
 
-          <div className="space-y-5">
-            {data.panelIds.map((id) => {
-              const persona = INVESTOR_PERSONAS[id] || { name: id, archetype: "Investor" };
-              const origScore = data.convictions.original[id] ?? 50;
-              const retryScore = data.convictions.retry[id] ?? origScore;
-              const delta = retryScore - origScore;
+          {/* Overall Delta Highlight Banner */}
+          <section className="bg-surface-2/60 border border-border rounded-panel p-6 flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="space-y-1 text-center sm:text-left">
+              <span className="text-xs font-bold uppercase tracking-wider text-text-2 block">
+                Overall Conviction Progression
+              </span>
+              <h2 className="text-2xl font-serif font-bold text-navy">
+                {data.overallDelta >= 0 ? "Credibility Strengthened" : "Divergence Detected"}
+              </h2>
+              <p className="text-xs text-text max-w-xl">
+                Comparing verified claim evidence and partner conviction between sessions.
+              </p>
+            </div>
 
-              return (
-                <div key={id} className="bg-surface-elevated border border-surface-border rounded-xl p-4 space-y-3">
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center space-x-2">
-                      <span className="font-bold text-slate-200 text-sm">{persona.name}</span>
-                      <span className="text-[11px] text-slate-400 font-mono">({persona.archetype})</span>
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-white border border-border rounded-field text-center">
+                <span className="text-[10px] uppercase font-bold text-text-2 block">Net Conviction Delta</span>
+                <span
+                  className={`text-2xl font-bold font-sans tabular-nums ${
+                    data.overallDelta >= 0 ? "text-success" : "text-danger"
+                  }`}
+                >
+                  {data.overallDelta >= 0 ? `+${data.overallDelta}%` : `${data.overallDelta}%`}
+                </span>
+              </div>
+            </div>
+          </section>
+
+          {/* Side-by-Side Conviction Table */}
+          <section className="space-y-3">
+            <h3 className="text-base font-serif font-bold text-navy">
+              Partner Conviction Shift
+            </h3>
+
+            <div className="overflow-x-auto border border-border rounded-panel">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-surface-2 border-b border-border text-text-2 uppercase text-[10px] tracking-wider">
+                    <th className="p-3.5 font-bold">Investor</th>
+                    <th className="p-3.5 font-bold">Initial Conviction</th>
+                    <th className="p-3.5 font-bold">Revised Conviction</th>
+                    <th className="p-3.5 font-bold">Delta Shift</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {Object.keys(data.convictions.original || {}).map((key) => {
+                    const prof = INVESTOR_PROFILES[key] || {
+                      name: key,
+                      title: "Partner",
+                    };
+                    const orig = data.convictions.original[key] ?? 50;
+                    const ret = data.convictions.retry?.[key] ?? orig;
+                    const diff = ret - orig;
+
+                    return (
+                      <tr key={key} className="hover:bg-slate-50/60 transition-subtle">
+                        <td className="p-3.5 font-bold text-navy">
+                          {prof.name}
+                          <span className="block text-[11px] font-normal text-text-2">
+                            {prof.title}
+                          </span>
+                        </td>
+                        <td className="p-3.5 font-sans tabular-nums text-text-2 font-medium">
+                          {orig}%
+                        </td>
+                        <td className="p-3.5 font-sans tabular-nums font-bold text-navy">
+                          {ret}%
+                        </td>
+                        <td className="p-3.5">
+                          <Chip
+                            variant={diff > 0 ? "verified" : diff < 0 ? "danger" : "neutral"}
+                            size="sm"
+                            label={diff > 0 ? `+${diff}%` : diff < 0 ? `${diff}%` : "0%"}
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          {/* Diligence Criteria Progression */}
+          <section className="space-y-3">
+            <h3 className="text-base font-serif font-bold text-navy">
+              Diligence Criteria Progression
+            </h3>
+
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              {Object.entries(data.criteriaScores.original || {}).map(([key, origScore]) => {
+                const retryScore = data.criteriaScores.retry?.[key] ?? origScore;
+                const delta = retryScore - origScore;
+
+                return (
+                  <div key={key} className="p-3 rounded-field border border-border bg-surface-2/40 text-center space-y-1">
+                    <span className="text-[10px] uppercase font-bold text-text-2 block truncate">
+                      {key}
+                    </span>
+                    <div className="flex items-center justify-center gap-1.5 font-sans tabular-nums font-bold">
+                      <span className="text-text-2 text-xs">{origScore}</span>
+                      <ArrowRight className="w-3 h-3 text-slate-400" />
+                      <span className="text-navy text-sm">{retryScore}</span>
                     </div>
                     <span
-                      className={`font-mono font-bold text-xs px-2 py-0.5 rounded border ${
-                        delta >= 0
-                          ? "bg-emerald-950 text-emerald-300 border-emerald-500/50"
-                          : "bg-red-950 text-red-300 border-red-500/50"
+                      className={`text-[10px] font-bold block ${
+                        delta > 0 ? "text-success" : delta < 0 ? "text-danger" : "text-text-2"
                       }`}
                     >
-                      {delta >= 0 ? `+${delta}%` : `${delta}%`}
+                      {delta > 0 ? `+${delta}` : `${delta}`}
                     </span>
                   </div>
+                );
+              })}
+            </div>
+          </section>
 
-                  {/* Dual Bar Comparison */}
-                  <div className="space-y-2">
-                    {/* Original Session Bar */}
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-[10px] text-slate-400 font-mono">
-                        <span>Original Pitch</span>
-                        <span>{origScore}%</span>
-                      </div>
-                      <div className="w-full bg-background rounded-full h-2 overflow-hidden">
-                        <div
-                          className="h-full bg-slate-500 rounded-full"
-                          style={{ width: `${origScore}%` }}
-                        ></div>
-                      </div>
-                    </div>
-
-                    {/* Retry Session Bar */}
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-[10px] text-shark-orange font-mono font-semibold">
-                        <span>Revised Pitch</span>
-                        <span>{retryScore}%</span>
-                      </div>
-                      <div className="w-full bg-background rounded-full h-2 overflow-hidden">
-                        <div
-                          className="h-full bg-shark-orange rounded-full"
-                          style={{ width: `${retryScore}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* 5 Diligence Criteria Progression */}
-        <section className="bg-surface-card border border-surface-border rounded-xl p-6 md:p-8 space-y-6">
-          <div className="border-b border-surface-border pb-3">
-            <h2 className="font-bold text-lg text-white flex items-center gap-2">
-              <span>🎯</span> Diligence Criteria Averages
-            </h2>
-            <p className="text-xs text-slate-400">
-              Evaluated on anchored 0–10 rubrics across directness, specificity, evidence, logic, and honesty.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            {[
-              { key: "directness", label: "Directness" },
-              { key: "specificity", label: "Specificity" },
-              { key: "evidence", label: "Evidence" },
-              { key: "logic", label: "Logic" },
-              { key: "honesty", label: "Honesty" },
-            ].map((crit) => {
-              const origVal = data.criteriaScores.original[crit.key] ?? 5;
-              const retryVal = data.criteriaScores.retry[crit.key] ?? origVal;
-              const diff = Math.round((retryVal - origVal) * 10) / 10;
-
-              return (
-                <div
-                  key={crit.key}
-                  className="bg-surface-elevated border border-surface-border rounded-xl p-4 text-center space-y-2"
-                >
-                  <span className="text-xs font-semibold text-slate-300 block">{crit.label}</span>
-                  <div className="flex items-center justify-center space-x-2 font-mono">
-                    <span className="text-sm text-slate-400">{origVal}</span>
-                    <span className="text-xs text-slate-600">&rarr;</span>
-                    <span className="text-base font-bold text-white">{retryVal}</span>
-                  </div>
-                  <span
-                    className={`text-[10px] font-mono block ${
-                      diff >= 0 ? "text-emerald-400" : "text-red-400"
-                    }`}
-                  >
-                    {diff >= 0 ? `+${diff}` : diff} pts
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </section>
+          {/* Legal Footer */}
+          <footer className="border-t border-border pt-4 text-center text-xs text-text-2">
+            <p>GrillRoom uses simulated investors for practice. Verdicts do not predict real investment decisions.</p>
+          </footer>
+        </article>
       </main>
-
-      {/* Footer */}
-      <footer className="border-t border-surface-border/50 py-6 px-6 text-center text-xs text-slate-500">
-        Simulated investors for practice. Verdicts do not predict real investment decisions.
-      </footer>
     </div>
   );
 }
