@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 4. Record Chair Introduction Turn
-    const chairIntroText = `Welcome to the GrillRoom. I am Marcus Vance, Independent Chair. Before you sit five experienced investors. Every statement you make will be recorded in our Claim Ledger. When numbers are tested, answer directly. Founder, the floor is yours.`;
+    const chairIntroText = `Welcome to the GrillRoom. I am Marcus Vance, Independent Chair. Before you sit five experienced investors. Every statement you make will be recorded in our Due Diligence Ledger. When numbers are tested, answer directly. Founder, the floor is yours.`;
     await recordTurn(sessionId, 0, "opening", "chair", "chair", chairIntroText);
 
     // 5. First Investor Opening Question (from their signature question anchored in pitch)

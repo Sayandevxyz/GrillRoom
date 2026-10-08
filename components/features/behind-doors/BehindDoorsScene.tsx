@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { FEATURE_BEHIND_DOORS } from "@/lib/features/flags";
-import { BehindDoorsSceneData, BehindDoorsDialogueTurn } from "@/app/api/session/behind-doors/route";
+import { BehindDoorsSceneData, BehindDoorsDialogueTurn } from "@/lib/features/behind-doors/normalizeScene";
 import { INVESTOR_PERSONAS } from "@/lib/engine/personas";
 import { Button } from "@/components/ui/Button";
 import { Volume2, Play, Eye, Quote, ShieldAlert } from "lucide-react";

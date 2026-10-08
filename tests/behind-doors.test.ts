@@ -1,31 +1,63 @@
 import { describe, it, expect } from "vitest";
-import { BehindDoorsSceneData } from "@/app/api/session/behind-doors/route";
+import { normalizeBehindDoorsScene } from "@/lib/features/behind-doors/normalizeScene";
 
-describe("Behind Closed Doors Scene Data", () => {
-  it("structures partner dialogue with valid speakers and tones", () => {
-    const sampleScene: BehindDoorsSceneData = {
-      scene_setting: "The founder drops off. Partners unmute.",
+describe("normalizeBehindDoorsScene", () => {
+  it("normalizes a valid raw LLM scene data correctly", () => {
+    const raw = {
+      scene_setting: "Partners lean in as call ends.",
       dialogue: [
         {
           speaker: "rohan",
           speaker_name: "Rohan",
-          text: "The payback unit math was completely missing.",
+          text: "Unit margins are underwater.",
           tone: "skeptical",
         },
         {
           speaker: "sam",
           speaker_name: "Sam",
-          text: "Founder showed great poise under pressure though.",
+          text: "Founder showed grit under cross-examination.",
           tone: "bullish",
         },
       ],
-      consensus: "Require customer unit evidence before term sheet.",
-      parting_quote: "Sharp minds don't save broken spreadsheets.",
+      consensus: "Require margin audit before drafting offer.",
+      parting_quote: "Proof beats promises.",
     };
 
-    expect(sampleScene.dialogue.length).toBe(2);
-    expect(sampleScene.dialogue[0].speaker).toBe("rohan");
-    expect(sampleScene.dialogue[1].tone).toBe("bullish");
-    expect(sampleScene.consensus).toContain("unit evidence");
+    const normalized = normalizeBehindDoorsScene(raw);
+    expect(normalized.scene_setting).toBe("Partners lean in as call ends.");
+    expect(normalized.dialogue).toHaveLength(2);
+    expect(normalized.dialogue[0].speaker).toBe("rohan");
+    expect(normalized.dialogue[1].tone).toBe("bullish");
+    expect(normalized.consensus).toContain("margin audit");
+    expect(normalized.parting_quote).toBe("Proof beats promises.");
+  });
+
+  it("applies robust fallback defaults when LLM output is null, malformed, or empty", () => {
+    const nullFallback = normalizeBehindDoorsScene(null);
+    expect(nullFallback.dialogue.length).toBeGreaterThanOrEqual(5);
+    expect(nullFallback.scene_setting).toContain("Rohan");
+    expect(nullFallback.consensus).toBeTruthy();
+    expect(nullFallback.parting_quote).toBeTruthy();
+
+    const emptyDialogueFallback = normalizeBehindDoorsScene({ dialogue: [] });
+    expect(emptyDialogueFallback.dialogue.length).toBeGreaterThanOrEqual(5);
+  });
+
+  it("sanitizes missing fields in partial dialogue items", () => {
+    const partial = {
+      scene_setting: "Room chatter.",
+      dialogue: [
+        {
+          speaker: "",
+          text: "Interesting model.",
+        },
+      ],
+    };
+
+    const normalized = normalizeBehindDoorsScene(partial);
+    expect(normalized.dialogue[0].speaker).toBe("rohan");
+    expect(normalized.dialogue[0].speaker_name).toBe("Rohan");
+    expect(normalized.dialogue[0].tone).toBe("analytical");
+    expect(normalized.dialogue[0].text).toBe("Interesting model.");
   });
 });

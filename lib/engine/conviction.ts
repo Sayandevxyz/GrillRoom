@@ -1,3 +1,10 @@
+import {
+  MIN_CONVICTION,
+  MAX_CONVICTION,
+  VERDICT_CONVICTION_THRESHOLD_IN,
+  VERDICT_CONVICTION_THRESHOLD_CONDITIONAL,
+} from "../constants";
+
 export type IntensityMode = "friendly" | "tough" | "shark";
 export type VerdictDecision = "In" | "Conditional" | "Out";
 
@@ -52,14 +59,21 @@ export function calculateConvictionDelta(
 
 /**
  * Clamps running conviction score strictly to 0..100
+ * @param currentScore Current investor conviction (0-100)
+ * @param delta Net delta to apply
+ * @returns Clamped score within [MIN_CONVICTION, MAX_CONVICTION]
  */
 export function clampConvictionScore(currentScore: number, delta: number): number {
-  return Math.max(0, Math.min(100, currentScore + delta));
+  return Math.max(MIN_CONVICTION, Math.min(MAX_CONVICTION, currentScore + delta));
 }
 
 /**
  * Pure code verdict threshold evaluator.
- * Never decided by the LLM.
+ * Decisions are strictly computed deterministically in code, never by the LLM.
+ *
+ * @param finalScore Final investor conviction score (0-100)
+ * @param intensity Mode intensity ("friendly" | "tough" | "shark")
+ * @returns VerdictDecision ("In" | "Conditional" | "Out")
  */
 export function getVerdictDecision(
   finalScore: number,
@@ -78,8 +92,8 @@ export function getVerdictDecision(
   }
 
   // Default "tough"
-  if (finalScore >= 65) return "In";
-  if (finalScore >= 40) return "Conditional";
+  if (finalScore >= VERDICT_CONVICTION_THRESHOLD_IN) return "In";
+  if (finalScore >= VERDICT_CONVICTION_THRESHOLD_CONDITIONAL) return "Conditional";
   return "Out";
 }
 

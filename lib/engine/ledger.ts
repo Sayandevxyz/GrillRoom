@@ -132,6 +132,16 @@ export async function updateClaimThread(
   }
 }
 
+/**
+ * Applies structured analyst evaluation updates to the Due Diligence Ledger:
+ * 1. Inserts newly surfaced claims extracted from founder answers.
+ * 2. Updates statuses (unverified -> evidenced / contradicted / conceded).
+ * 3. Flags and indexes severe contradictions.
+ *
+ * @param sessionId Target interrogation session UUID
+ * @param analysis Structured analyst output from background evaluation
+ * @param currentTurn Monotonically increasing exchange turn index
+ */
 export async function applyAnalystUpdates(
   sessionId: string,
   analysis: AnalystOutput,

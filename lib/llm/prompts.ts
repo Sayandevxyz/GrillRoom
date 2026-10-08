@@ -93,7 +93,7 @@ YOUR PERSONA:
 Founder Stated Pitch:
 ${wrapFounderText(ctx.pitchText, 1500)}
 
-Active Claim Ledger (Top relevant claims):
+Active Due Diligence Ledger (Top relevant claims):
 ${claimsSummary || "No previous claims recorded yet."}
 
 Target of Interrogation:
@@ -153,7 +153,7 @@ Question Asked to Founder:
 Founder's Answer:
 ${wrapFounderText(founderAnswer, 3000)}
 
-Current Claim Ledger:
+Current Due Diligence Ledger:
 ${ledgerSummary || "Empty ledger."}
 
 Active Panelists: [${panelKeys}]

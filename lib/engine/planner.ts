@@ -45,7 +45,16 @@ export function getFollowupCap(intensity: "friendly" | "tough" | "shark"): numbe
 }
 
 /**
- * Pure, deterministic planner logic.
+ * Pure, deterministic investor planner logic.
+ *
+ * Implements conversational steering rules:
+ * 1. Interrupt Rule: Contradictions (severity >= 3) trigger an immediate category-specialist interrupt.
+ * 2. Dodge Rule: Vague/evasive answers trigger a follow-up ladder escalation on the active thread.
+ * 3. Fairness Rule: Enforces turn rotation so under-represented investors get question priority.
+ * 4. Cross-Talk Rule: Inter-investor reactions when convictions diverge.
+ *
+ * @param ctx Current interrogation context, ledger claims, and analyst output
+ * @returns PlannerResult specifying the chosen speaker, question type, and claim target
  */
 export function planNextTurn(ctx: PlannerContext): PlannerResult {
   const cap = getFollowupCap(ctx.intensity);

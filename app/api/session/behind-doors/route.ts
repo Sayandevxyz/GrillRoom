@@ -14,19 +14,10 @@ const BehindDoorsSchema = z.object({
 
 export const maxDuration = 60;
 
-export interface BehindDoorsDialogueTurn {
-  speaker: string;
-  speaker_name: string;
-  text: string;
-  tone: "skeptical" | "bullish" | "intrigued" | "dismissive" | "analytical";
-}
-
-export interface BehindDoorsSceneData {
-  scene_setting: string;
-  dialogue: BehindDoorsDialogueTurn[];
-  consensus: string;
-  parting_quote: string;
-}
+import {
+  type BehindDoorsSceneData,
+  normalizeBehindDoorsScene,
+} from "@/lib/features/behind-doors/normalizeScene";
 
 export async function POST(req: NextRequest) {
   try {
@@ -145,7 +136,7 @@ ${session.idea_text}
 FOUNDER REPLIES DURING GRILLING:
 ${founderQuotes || "The founder gave brief answers without verified unit metrics."}
 
-DUE DILIGENCE CLAIM LEDGER:
+DUE DILIGENCE LEDGER:
 ${claimSummary || "No claims recorded"}
 
 PANEL DECISIONS:
@@ -174,51 +165,7 @@ Write a 6 to 8 turn confidential partner deliberation dialogue now. Return stric
       console.warn("[Behind Closed Doors LLM Error] Using structured fallback:", err);
     }
 
-    // Schema validation and robust fallback
-    if (
-      !sceneContent ||
-      !sceneContent.dialogue ||
-      !Array.isArray(sceneContent.dialogue) ||
-      sceneContent.dialogue.length === 0
-    ) {
-      sceneContent = {
-        scene_setting: "The founder disconnects from the call. Rohan unmutes immediately with his spreadsheet open.",
-        dialogue: [
-          {
-            speaker: "rohan",
-            speaker_name: "Rohan",
-            text: "Let's be completely real about the economics. Did anyone else notice how they hedged on customer acquisition payback?",
-            tone: "skeptical",
-          },
-          {
-            speaker: "meera",
-            speaker_name: "Meera",
-            text: "The top-down market sizing made me cringe. But if they actually target the acute wedge they hinted at, the bottom-up volume works.",
-            tone: "intrigued",
-          },
-          {
-            speaker: "arjun",
-            speaker_name: "Dr. Arjun",
-            text: "I pressed them on technical defensibility. Right now it's vulnerable to an incumbent copying the workflow in one sprint unless they lock down data gravity.",
-            tone: "analytical",
-          },
-          {
-            speaker: "kavya",
-            speaker_name: "Kavya",
-            text: "User pain is real though. The founder spoke to actual buyer friction—they just failed to bring receipts and customer quotes to the table.",
-            tone: "intrigued",
-          },
-          {
-            speaker: "sam",
-            speaker_name: "Sam",
-            text: "They took the punches and didn't collapse under pressure. Fix the unit proof points and tighten the narrative, and this is a venture-grade company.",
-            tone: "bullish",
-          },
-        ],
-        consensus: "The panel sees undeniable founder drive but demands verified customer proof points before issuing a term sheet.",
-        parting_quote: "Sharp minds don't save broken spreadsheets. Fix the proof points, then come back.",
-      };
-    }
+    const sceneData = normalizeBehindDoorsScene(sceneContent);
 
     // 3. Cache scene in database
     if (isNeonConfigured()) {
@@ -226,13 +173,13 @@ Write a 6 to 8 turn confidential partner deliberation dialogue now. Return stric
         `INSERT INTO behind_doors_scenes (session_id, content_json)
          VALUES ($1, $2)
          ON CONFLICT (session_id) DO UPDATE SET content_json = EXCLUDED.content_json`,
-        [sessionId, JSON.stringify(sceneContent)]
+        [sessionId, JSON.stringify(sceneData)]
       );
     } else {
-      mockDb.behind_doors.set(sessionId, sceneContent as unknown as Record<string, unknown>);
+      mockDb.behind_doors.set(sessionId, sceneData as unknown as Record<string, unknown>);
     }
 
-    return NextResponse.json(sceneContent);
+    return NextResponse.json(sceneData);
   } catch (err: unknown) {
     const errorId = logServerError(err, "Behind Closed Doors Error");
     return NextResponse.json(

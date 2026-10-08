@@ -189,7 +189,17 @@ export interface TurnExecutionResult {
 }
 
 /**
- * Executes a full turn of interrogation.
+ * Orchestrates a complete autonomous interrogation turn:
+ * 1. Records founder answer in session history.
+ * 2. Triggers Analyst evaluation (scores, claim updates, contradictions, deltas).
+ * 3. Applies updates to the Due Diligence Ledger.
+ * 4. Deterministically computes updated conviction meters with bounds & sanity caps.
+ * 5. Runs the rule-based Planner to choose next speaker, question type, and claim target.
+ * 6. Generates investor question with streaming SSE response.
+ *
+ * @param session Current active session record
+ * @param founderAnswer Raw answer text submitted by the founder
+ * @returns TurnExecutionResult with metadata, stream, and persistence callback
  */
 export async function executeInterrogationTurn(
   session: SessionRecord,
