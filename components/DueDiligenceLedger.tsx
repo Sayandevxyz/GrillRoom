@@ -42,17 +42,26 @@ export const DueDiligenceLedger: React.FC<DueDiligenceLedgerProps> = ({
     humanCategory: humanizeCategory(claim.category),
   }));
 
-  // Counts
+  // Counts following claim status:
+  // Unverified and Contradicted count as Needs Proof / Needs Attention
+  // Evidenced counts as Verified
+  // Total = all claims
   const verifiedCount = processedClaims.filter(
-    (c) => c.mapped.status === "verified" || c.mapped.status === "strong_claim"
+    (c) => c.status === "evidenced" || c.mapped.status === "verified" || c.mapped.status === "strong_claim"
   ).length;
 
   const needsAttentionCount = processedClaims.filter(
-    (c) => c.mapped.status === "contradiction" || c.mapped.status === "needs_evidence"
+    (c) =>
+      c.status === "unverified" ||
+      c.status === "contradicted" ||
+      c.status === "conceded" ||
+      c.mapped.status === "unverified" ||
+      c.mapped.status === "needs_evidence" ||
+      c.mapped.status === "contradiction"
   ).length;
 
   const contradictionCount = processedClaims.filter(
-    (c) => c.mapped.status === "contradiction"
+    (c) => c.status === "contradicted" || c.mapped.status === "contradiction"
   ).length;
 
   const tabs: TabItem[] = [
@@ -63,10 +72,21 @@ export const DueDiligenceLedger: React.FC<DueDiligenceLedgerProps> = ({
 
   const filteredClaims = processedClaims.filter((claim) => {
     if (activeTab === "attention") {
-      return claim.mapped.status === "contradiction" || claim.mapped.status === "needs_evidence";
+      return (
+        claim.status === "unverified" ||
+        claim.status === "contradicted" ||
+        claim.status === "conceded" ||
+        claim.mapped.status === "unverified" ||
+        claim.mapped.status === "needs_evidence" ||
+        claim.mapped.status === "contradiction"
+      );
     }
     if (activeTab === "verified") {
-      return claim.mapped.status === "verified" || claim.mapped.status === "strong_claim";
+      return (
+        claim.status === "evidenced" ||
+        claim.mapped.status === "verified" ||
+        claim.mapped.status === "strong_claim"
+      );
     }
     return true;
   });
