@@ -36,7 +36,24 @@ export async function POST(req: NextRequest) {
     }
 
     const arrayBuffer = await file.arrayBuffer();
-    const { text, totalPages } = await extractText(new Uint8Array(arrayBuffer));
+    const uint8Array = new Uint8Array(arrayBuffer);
+
+    // Verify PDF magic bytes: '%PDF-' (0x25, 0x50, 0x44, 0x46, 0x2D)
+    if (
+      uint8Array.length < 5 ||
+      uint8Array[0] !== 0x25 ||
+      uint8Array[1] !== 0x50 ||
+      uint8Array[2] !== 0x44 ||
+      uint8Array[3] !== 0x46 ||
+      uint8Array[4] !== 0x2d
+    ) {
+      return NextResponse.json(
+        { error: "Invalid PDF file structure (magic byte verification failed)." },
+        { status: 400 }
+      );
+    }
+
+    const { text, totalPages } = await extractText(uint8Array);
 
     const cleanText = Array.isArray(text) ? text.join("\n") : String(text || "");
 

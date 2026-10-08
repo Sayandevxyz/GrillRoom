@@ -158,54 +158,64 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const sessionId = req.nextUrl.searchParams.get("sessionId");
-  if (!sessionId) {
-    return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
+  try {
+    const sessionId = req.nextUrl.searchParams.get("sessionId");
+    if (!sessionId) {
+      return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
+    }
+
+    const { getSession, getTurns, getLatestConvictions } = await import("@/lib/engine/session");
+    const { getSessionClaims } = await import("@/lib/engine/ledger");
+
+    const session = await getSession(sessionId);
+    if (!session) {
+      return NextResponse.json({ error: "Session not found" }, { status: 404 });
+    }
+
+    const turns = await getTurns(sessionId);
+    const claims = await getSessionClaims(sessionId);
+    const meters = await getLatestConvictions(sessionId, session.panel_ids);
+
+    return NextResponse.json({
+      session,
+      turns,
+      claims,
+      meters,
+    });
+  } catch (err: unknown) {
+    const errorId = logServerError(err, "Session GET Error");
+    return NextResponse.json({ error: "Failed to retrieve session data.", errorId }, { status: 500 });
   }
-
-  const { getSession, getTurns, getLatestConvictions } = await import("@/lib/engine/session");
-  const { getSessionClaims } = await import("@/lib/engine/ledger");
-
-  const session = await getSession(sessionId);
-  if (!session) {
-    return NextResponse.json({ error: "Session not found" }, { status: 404 });
-  }
-
-  const turns = await getTurns(sessionId);
-  const claims = await getSessionClaims(sessionId);
-  const meters = await getLatestConvictions(sessionId, session.panel_ids);
-
-  return NextResponse.json({
-    session,
-    turns,
-    claims,
-    meters,
-  });
 }
 
 export async function DELETE(req: NextRequest) {
-  const sessionId = req.nextUrl.searchParams.get("sessionId");
-  if (!sessionId) {
-    return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
-  }
+  try {
+    const sessionId = req.nextUrl.searchParams.get("sessionId");
+    if (!sessionId) {
+      return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
+    }
 
-  const { getSession } = await import("@/lib/engine/session");
-  const session = await getSession(sessionId);
-  if (!session) {
-    return NextResponse.json({ error: "Session not found" }, { status: 404 });
-  }
+    const { getSession } = await import("@/lib/engine/session");
+    const session = await getSession(sessionId);
+    if (!session) {
+      return NextResponse.json({ error: "Session not found" }, { status: 404 });
+    }
 
-  const ownerCookie = req.cookies.get("owner_token")?.value;
-  if (!ownerCookie || ownerCookie !== session.owner_token) {
-    return NextResponse.json({ error: "Forbidden: invalid owner credentials" }, { status: 403 });
-  }
+    const ownerCookie = req.cookies.get("owner_token")?.value;
+    if (!ownerCookie || ownerCookie !== session.owner_token) {
+      return NextResponse.json({ error: "Forbidden: invalid owner credentials" }, { status: 403 });
+    }
 
-  if (isNeonConfigured()) {
-    await query(`DELETE FROM sessions WHERE id = $1`, [sessionId]);
-  } else {
-    mockDb.sessions.delete(sessionId);
-  }
+    if (isNeonConfigured()) {
+      await query(`DELETE FROM sessions WHERE id = $1`, [sessionId]);
+    } else {
+      mockDb.sessions.delete(sessionId);
+    }
 
-  return NextResponse.json({ deleted: true, sessionId });
+    return NextResponse.json({ deleted: true, sessionId });
+  } catch (err: unknown) {
+    const errorId = logServerError(err, "Session DELETE Error");
+    return NextResponse.json({ error: "Failed to delete session.", errorId }, { status: 500 });
+  }
 }
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession, executeInterrogationTurn } from "@/lib/engine/session";
 import { getSessionClaims } from "@/lib/engine/ledger";
-import { checkRateLimit } from "@/lib/security";
+import { checkRateLimit, logServerError } from "@/lib/security";
 
 const AnswerSchema = z.object({
   sessionId: z.string().uuid(),
@@ -91,9 +91,8 @@ export async function POST(req: NextRequest) {
           sendEvent("done", { ok: true });
           controller.close();
         } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : "Error processing turn";
-          console.error("[SSE Stream Processing Error]", err);
-          sendEvent("error", { message });
+          const errorId = logServerError(err, "SSE Stream Processing Error");
+          sendEvent("error", { message: "Error processing turn. Please try again.", errorId });
           controller.close();
         }
       },
@@ -107,8 +106,7 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to process answer";
-    console.error("[Answer Route Error]", err);
-    return NextResponse.json({ error: message }, { status: 500 });
+    const errorId = logServerError(err, "Answer Route Error");
+    return NextResponse.json({ error: "Failed to process answer. Please try again.", errorId }, { status: 500 });
   }
 }

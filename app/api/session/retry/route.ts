@@ -5,7 +5,7 @@ import { query, mockDb, isNeonConfigured } from "@/lib/db";
 import { getSession, recordTurn, recordConviction } from "@/lib/engine/session";
 import { addClaim } from "@/lib/engine/ledger";
 import { INVESTOR_PERSONAS } from "@/lib/engine/personas";
-import { checkRateLimit } from "@/lib/security";
+import { checkRateLimit, logServerError } from "@/lib/security";
 import { evaluateAnswer } from "@/lib/engine/analyst";
 
 const RetrySchema = z.object({
@@ -122,8 +122,7 @@ export async function POST(req: NextRequest) {
       status: "active",
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to create retry session";
-    console.error("[Retry Route Error]", err);
-    return NextResponse.json({ error: message }, { status: 500 });
+    const errorId = logServerError(err, "Retry Route Error");
+    return NextResponse.json({ error: "Failed to create retry session. Please try again.", errorId }, { status: 500 });
   }
 }

@@ -5,7 +5,7 @@ import { getSession, getLatestConvictions } from "@/lib/engine/session";
 import { getSessionClaims } from "@/lib/engine/ledger";
 import { getVerdictDecision, generateSimulatedOffer } from "@/lib/engine/conviction";
 import { INVESTOR_PERSONAS } from "@/lib/engine/personas";
-import { checkRateLimit } from "@/lib/security";
+import { checkRateLimit, logServerError } from "@/lib/security";
 
 const VerdictSchema = z.object({
   sessionId: z.string().uuid(),
@@ -121,8 +121,7 @@ export async function POST(req: NextRequest) {
       verdicts: verdictsList,
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to generate verdicts";
-    console.error("[Verdict Route Error]", err);
-    return NextResponse.json({ error: message }, { status: 500 });
+    const errorId = logServerError(err, "Verdict Route Error");
+    return NextResponse.json({ error: "Failed to generate verdicts. Please try again.", errorId }, { status: 500 });
   }
 }
