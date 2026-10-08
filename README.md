@@ -6,12 +6,7 @@
 
 ---
 
-### Screenshots
-| Landing Lobby | Boardroom Interrogation |
-| :---: | :---: |
-| ![Landing Lobby](docs/screenshots/landing.png) | ![Session Interrogation](docs/screenshots/session.png) |
-| **Algorithmic Verdicts** | **Debrief Dossier** |
-| ![Verdicts](docs/screenshots/verdict.png) | ![Debrief Dossier](docs/screenshots/debrief.png) |
+
 
 *(Placeholder paths configured under `docs/screenshots/` with `.gitkeep` tracker).*
 
