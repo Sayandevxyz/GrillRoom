@@ -1,8 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 
-const databaseUrl = process.env.DATABASE_URL;
-
-// In-memory fallback storage if DATABASE_URL is not set (e.g. initial scaffold/offline dev)
+// In-memory fallback storage if DATABASE_URL is not set (for offline dev/tests)
 interface MockDB {
   sessions: Map<string, Record<string, unknown>>;
   panel_members: Map<string, Record<string, unknown>>;
@@ -32,12 +30,14 @@ const mockDb: MockDB = {
 };
 
 export function isNeonConfigured(): boolean {
-  return Boolean(databaseUrl && databaseUrl.startsWith("postgres"));
+  const url = process.env.DATABASE_URL;
+  return Boolean(url && (url.startsWith("postgres://") || url.startsWith("postgresql://")));
 }
 
 export function getDb() {
-  if (isNeonConfigured()) {
-    return neon(databaseUrl!);
+  const url = process.env.DATABASE_URL;
+  if (isNeonConfigured() && url) {
+    return neon(url);
   }
   return null;
 }
@@ -46,10 +46,17 @@ export async function query<T = Record<string, unknown>>(
   sqlText: string,
   params: unknown[] = []
 ): Promise<T[]> {
-  if (isNeonConfigured()) {
+  const url = process.env.DATABASE_URL;
+  const isProd = process.env.NODE_ENV === "production";
+
+  // In production runtime requests, a missing or invalid DATABASE_URL throws a clear error
+  if (isProd && !isNeonConfigured() && !process.env.CI && process.env.NEXT_PHASE !== "phase-production-build") {
+    throw new Error("DATABASE_URL is not configured or invalid in production environment.");
+  }
+
+  if (isNeonConfigured() && url) {
     try {
-      const sql = neon(databaseUrl!);
-      // Parameterized query execution
+      const sql = neon(url);
       const result = await sql(sqlText, params as (string | number | boolean | null)[]);
       return (result as unknown as T[]) || [];
     } catch (err) {
@@ -58,7 +65,7 @@ export async function query<T = Record<string, unknown>>(
     }
   }
 
-  // Graceful fallback execution for in-memory development
+  // Graceful fallback execution for in-memory development and testing
   return executeMockQuery<T>(sqlText, params);
 }
 
@@ -84,6 +91,16 @@ function executeMockQuery<T>(sqlText: string, params: unknown[]): T[] {
     const id = String(params[0]);
     const session = mockDb.sessions.get(id);
     return session ? ([session] as unknown as T[]) : [];
+  }
+
+  // Rate limits atomic upsert mock
+  if (normalized.startsWith("insert into rate_limits")) {
+    const key = String(params[0] || "");
+    const windowStart = String(params[1] || "");
+    const existing = mockDb.rate_limits.get(`${key}:${windowStart}`) as { count: number } | undefined;
+    const count = existing ? existing.count + 1 : 1;
+    mockDb.rate_limits.set(`${key}:${windowStart}`, { key, window_start: windowStart, count });
+    return [{ count }] as unknown as T[];
   }
 
   // Fallback placeholder

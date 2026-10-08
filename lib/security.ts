@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { query } from "./db";
 
 /**
@@ -19,42 +20,52 @@ export function wrapFounderText(rawText: string, maxLength: number = 4000): stri
 }
 
 /**
- * IP-based rate limiter using rate_limits table
+ * Defensive client IP derivation.
+ */
+export function getClientIp(headers: Headers): string {
+  const realIp = headers.get("x-real-ip");
+  if (realIp) return realIp.trim().slice(0, 45);
+
+  const vercelIp = headers.get("x-vercel-forwarded-for");
+  if (vercelIp) return vercelIp.split(",")[0].trim().slice(0, 45);
+
+  const forwardedFor = headers.get("x-forwarded-for");
+  if (forwardedFor) return forwardedFor.split(",")[0].trim().slice(0, 45);
+
+  return "127.0.0.1";
+}
+
+/**
+ * IP-based rate limiter using atomic PostgreSQL upsert.
  */
 export async function checkRateLimit(
   ip: string,
   limitPerMin: number = 30
 ): Promise<{ allowed: boolean; remaining: number }> {
   const windowStart = new Date(Math.floor(Date.now() / 60000) * 60000).toISOString();
-  const key = `ip:${ip}`;
+  const safeIp = (ip || "127.0.0.1").trim().slice(0, 45);
+  const key = `ip:${safeIp}`.slice(0, 64);
 
   try {
-    const existing = await query<{ count: number }>(
-      `SELECT count FROM rate_limits WHERE key = $1 AND window_start = $2`,
+    const rows = await query<{ count: number }>(
+      `INSERT INTO rate_limits (key, window_start, count)
+       VALUES ($1, $2, 1)
+       ON CONFLICT (key, window_start)
+       DO UPDATE SET count = rate_limits.count + 1
+       RETURNING count`,
       [key, windowStart]
     );
 
-    let currentCount = 0;
-    if (existing && existing.length > 0) {
-      currentCount = Number(existing[0].count) || 0;
-    }
+    const currentCount = rows && rows.length > 0 ? Number(rows[0].count) : 1;
 
-    if (currentCount >= limitPerMin) {
+    if (currentCount > limitPerMin) {
       return { allowed: false, remaining: 0 };
     }
 
-    const nextCount = currentCount + 1;
-    await query(
-      `INSERT INTO rate_limits (key, window_start, count)
-       VALUES ($1, $2, $3)
-       ON CONFLICT (key, window_start) DO UPDATE SET count = $3`,
-      [key, windowStart, nextCount]
-    );
-
-    return { allowed: true, remaining: limitPerMin - nextCount };
+    return { allowed: true, remaining: Math.max(0, limitPerMin - currentCount) };
   } catch (err) {
-    // If rate limit table check fails, allow traffic to prevent blocking the user
-    console.warn("[Rate Limit Check Warning]", err);
+    // Fail-open defensively so unexpected DB hiccups never block founders
+    console.warn("[Rate Limit Check Warning: failing open]", err);
     return { allowed: true, remaining: limitPerMin };
   }
 }
@@ -64,10 +75,9 @@ export async function checkRateLimit(
  * and stack trace safely to the server console only.
  */
 export function logServerError(err: unknown, context: string): string {
-  const errorId = "err_" + Math.random().toString(36).slice(2, 10);
+  const errorId = "err_" + crypto.randomUUID().slice(0, 8);
   const message = err instanceof Error ? err.message : String(err);
   const stack = err instanceof Error ? err.stack : "";
   console.error(`[${context}] [${errorId}]`, message, stack ? `\n${stack}` : "");
   return errorId;
 }
-

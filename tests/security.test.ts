@@ -63,8 +63,7 @@ describe("Security & Hardening Test Suite", () => {
 
   describe("checkRateLimit", () => {
     it("allows requests when count is below limit", async () => {
-      vi.spyOn(dbModule, "query").mockResolvedValueOnce([]); // no existing rows
-      vi.spyOn(dbModule, "query").mockResolvedValueOnce([]); // insert ok
+      vi.spyOn(dbModule, "query").mockResolvedValueOnce([{ count: 1 }]);
 
       const result = await checkRateLimit("192.168.1.1", 30);
       expect(result.allowed).toBe(true);
@@ -72,7 +71,7 @@ describe("Security & Hardening Test Suite", () => {
     });
 
     it("blocks requests when count reaches limit", async () => {
-      vi.spyOn(dbModule, "query").mockResolvedValueOnce([{ count: 30 }]);
+      vi.spyOn(dbModule, "query").mockResolvedValueOnce([{ count: 31 }]);
 
       const result = await checkRateLimit("192.168.1.1", 30);
       expect(result.allowed).toBe(false);

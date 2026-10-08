@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { query, mockDb, isNeonConfigured } from "@/lib/db";
 import { getSession, getLatestConvictions } from "@/lib/engine/session";
 import { getSessionClaims } from "@/lib/engine/ledger";
 import { checkRateLimit, logServerError } from "@/lib/security";
 
 export const maxDuration = 60;
+
+const CompareQuerySchema = z.object({
+  sessionId: z.string().uuid("Invalid sessionId parameter (must be a valid UUID)"),
+});
 
 export async function GET(req: NextRequest) {
   try {
@@ -14,10 +19,16 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
     }
 
-    const sessionId = req.nextUrl.searchParams.get("sessionId");
-    if (!sessionId) {
-      return NextResponse.json({ error: "Missing sessionId parameter" }, { status: 400 });
+    const rawSessionId = req.nextUrl.searchParams.get("sessionId");
+    const parsed = CompareQuerySchema.safeParse({ sessionId: rawSessionId });
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message || "Invalid sessionId parameter" },
+        { status: 400 }
+      );
     }
+
+    const sessionId = parsed.data.sessionId;
 
     const currentSession = await getSession(sessionId);
     if (!currentSession) {

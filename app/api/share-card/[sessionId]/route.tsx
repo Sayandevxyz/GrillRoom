@@ -1,9 +1,14 @@
 import { ImageResponse } from "next/og";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { query, isNeonConfigured, mockDb } from "@/lib/db";
 import { FEATURE_SHARE_CARD } from "@/lib/features/flags";
 
 export const runtime = "edge";
+
+const ShareCardParamsSchema = z.object({
+  sessionId: z.string().uuid("Invalid sessionId parameter (must be a valid UUID)"),
+});
 
 interface RouteProps {
   params: Promise<{
@@ -28,7 +33,13 @@ export async function GET(req: NextRequest, props: RouteProps) {
     return new NextResponse("Share card feature disabled", { status: 404 });
   }
 
-  const { sessionId } = await props.params;
+  const rawParams = await props.params;
+  const parsed = ShareCardParamsSchema.safeParse(rawParams);
+  if (!parsed.success) {
+    return new NextResponse("Invalid sessionId parameter", { status: 400 });
+  }
+
+  const { sessionId } = parsed.data;
 
   let readinessScore = 65;
   let inCount = 0;
